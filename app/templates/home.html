@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Home - TunisiaHub{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto text-center py-20">
+    <h2 class="text-5xl font-extrabold mb-6 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+        All-in-One Tunisian Media Platform
+    </h2>
+    <p class="text-xl text-gray-400 mb-8">Radio, News, Video Editing, and AI Transcription.</p>
+    <div class="grid grid-cols-2 gap-6 mt-12">
+        <a href="/radio" class="p-6 bg-gray-800 rounded-xl hover:bg-gray-700 transition">📻 Web Radio</a>
+        <a href="/news" class="p-6 bg-gray-800 rounded-xl hover:bg-gray-700 transition">📰 News CMS</a>
+        <a href="/downloader" class="p-6 bg-gray-800 rounded-xl hover:bg-gray-700 transition">⬇️ Downloader</a>
+        <a href="/transcription" class="p-6 bg-gray-800 rounded-xl hover:bg-gray-700 transition">🎙️ Transcription</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}News - TunisiaHub{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-3xl font-bold">📰 News</h2>
+    <div class="flex gap-2">
+        <a href="/news" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">All</a>
+        <a href="/news?category=Politics" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Politics</a>
+        <a href="/news?category=Economy" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Economy</a>
+        <a href="/news?category=Tech" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Tech</a>
+        <a href="/news?category=Sports" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Sports</a>
+        <a href="/news?category=Religion" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Religion</a>
+        <a href="/news?category=Culture" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Culture</a>
+        <a href="/news?category=Health" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Health</a>
+        <a href="/news?category=Education" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Education</a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for article in articles %}
+    <!-- Wrapped in <a> tag to make it clickable -->
+    <a href="/news/{{ article.id }}" data-nav class="bg-gray-800 rounded-xl overflow-hidden hover:scale-[1.02] transition-transform block">
+        {% if article.image_url %}
+            <img src="{{ article.image_url }}" class="w-full h-48 object-cover">
+        {% else %}
+            <div class="w-full h-48 bg-gray-700 flex items-center justify-center text-gray-500">No Image</div>
+        {% endif %}
+        <div class="p-4">
+            <span class="text-xs text-blue-400 bg-blue-400/10 px-2 py-1 rounded">{{ article.category }}</span>
+            <h3 class="text-xl font-bold mt-2 text-white">{{ article.title }}</h3>
+            <p class="text-gray-400 mt-2 line-clamp-2">{{ article.content[:150] | safe }}...</p>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Transcription - TunisiaHub{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h2 class="text-3xl font-bold mb-6">🎙️ AI Transcription (Whisper)</h2>
+    
+    <div class="bg-gray-800 p-6 rounded-xl mb-6">
+        <div class="mb-4">
+            <label class="block text-sm mb-2 font-bold">Input Method</label>
+            <div class="flex gap-2 mb-4">
+                <button onclick="setInputMode('file')" id="mode-file-btn" class="px-4 py-2 bg-blue-600 rounded">Upload File</button>
+                <button onclick="setInputMode('url')" id="mode-url-btn" class="px-4 py-2 bg-gray-700 rounded">From URL</button>
+            </div>
+            
+            <div id="input-file">
+                <input type="file" id="audio-file" accept="audio/*,video/*" class="w-full bg-gray-900 p-2 rounded border border-gray-700">
+            </div>
+            <div id="input-url" class="hidden">
+                <input type="text" id="audio-url" placeholder="YouTube / TikTok URL (Audio will be extracted)" class="w-full bg-gray-900 p-2 rounded border border-gray-700">
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <label class="block text-sm mb-1">Language</label>
+            <select id="lang" class="w-full bg-gray-900 p-2 rounded border border-gray-700">
+                <option value="ar">Arabic</option>
+                <option value="en">English</option>
+                <option value="fr">French</option>
+                <option value="auto">Auto Detect</option>
+            </select>
+        </div>
+        
+        <button onclick="transcribe()" id="btn-transcribe" class="w-full bg-green-600 p-3 rounded font-bold hover:bg-green-700">
+            Transcribe
+        </button>
+        <p id="transcribe-status" class="text-sm text-gray-400 text-center mt-3 hidden">Downloading/Processing... (AI takes time)</p>
+    </div>
+
+    <div id="transcription-result" class="hidden bg-gray-800 p-6 rounded-xl">
+        <div class="flex justify-between mb-4">
+            <h3 class="font-bold text-xl">Result</h3>
+            <button onclick="exportTxt()" class="bg-blue-600 px-4 py-1 rounded text-sm hover:bg-blue-700">Export TXT</button>
+        </div>
+        <div id="transcription-text" class="bg-gray-900 p-4 rounded h-96 overflow-y-auto whitespace-pre-wrap text-gray-300 font-mono text-sm"></div>
+    </div>
+</div>
+
+<script>
+    let currentMode = 'file';
+
+    function setInputMode(mode) {
+        currentMode = mode;
+        document.getElementById('input-file').classList.toggle('hidden', mode !== 'file');
+        document.getElementById('input-url').classList.toggle('hidden', mode !== 'url');
+        document.getElementById('mode-file-btn').classList.toggle('bg-blue-600', mode === 'file');
+        document.getElementById('mode-file-btn').classList.toggle('bg-gray-700', mode !== 'file');
+        document.getElementById('mode-url-btn').classList.toggle('bg-blue-600', mode === 'url');
+        document.getElementById('mode-url-btn').classList.toggle('bg-gray-700', mode !== 'url');
+    }
+
+    async function transcribe() {
+        const btn = document.getElementById('btn-transcribe');
+        const status = document.getElementById('transcribe-status');
+        btn.disabled = true;
+        status.classList.remove('hidden');
+        status.innerText = "Sending to server...";
+        
+        const fd = new FormData();
+        fd.append('language', document.getElementById('lang').value);
+        
+        if (currentMode === 'url') {
+            const url = document.getElementById('audio-url').value;
+            if(!url) return alert("Enter URL");
+            fd.append('url', url);
+            status.innerText = "Extracting audio from URL & running AI...";
+        } else {
+            const file = document.getElementById('audio-file').files[0];
+            if(!file) return alert("Select a file");
+            fd.append('file', file);
+            status.innerText = "Running AI transcription...";
+        }
+
+        try {
+            const res = await fetch('/api/transcribe', { method: 'POST', body: fd });
+            if(!res.ok) throw new Error(await res.text());
+            const data = await res.json();
+            
+            document.getElementById('transcription-result').classList.remove('hidden');
+            const formatted = data.segments.map(s => `[${formatTime(s.start)} - ${formatTime(s.end)}] ${s.text}`).join('\n');
+            document.getElementById('transcription-text').innerText = formatted;
+            status.innerText = "Done!";
+        } catch(e) {
+            status.innerText = "Error: " + e.message;
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function formatTime(s) {
+        const m = Math.floor(s / 60);
+        const sec = (s % 60).toFixed(1);
+        return `${m}:${sec.padStart(4, '0')}`;
+    }
+
+    function exportTxt() {
+        const text = document.getElementById('transcription-text').innerText;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'transcription.txt';
+        a.click();
+    }
+</script>
+{% endblock %}

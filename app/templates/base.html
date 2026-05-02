@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TunisiaHub{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: {} }
+        }
+    </script>
+</head>
+<body class="bg-white text-black dark:bg-gray-900 dark:text-white flex h-screen overflow-hidden">
+
+    <aside class="w-64 bg-gray-200 dark:bg-gray-800 flex flex-col justify-between p-4 flex-shrink-0 z-40">
+        <div>
+            <h1 class="text-2xl font-bold mb-10 text-blue-400">🇹🇳 TunisiaHub</h1>
+            <nav class="space-y-2">
+                <!-- data-nav triggers AJAX loading -->
+                <a href="/" data-nav class="nav-link block p-2 rounded transition hover:bg-gray-700">🏠 Home</a>
+                <a href="/radio" data-nav class="nav-link block p-2 rounded transition hover:bg-gray-700">📻 Radio</a>
+                <a href="/news" data-nav class="nav-link block p-2 rounded transition hover:bg-gray-700">📰 News</a>
+                <a href="/downloader" data-nav class="nav-link block p-2 rounded transition hover:bg-gray-700">⬇️ Downloader</a>
+                <a href="/transcription" data-nav class="nav-link block p-2 rounded transition hover:bg-gray-700">🎙️ Transcription</a>
+                <a href="/image-tools" data-nav class="block p-2 rounded transition hover:bg-gray-700">🖼️ Image Tools</a>
+                
+                {% if request.state.user and request.state.user.is_admin %}
+                    <a href="/admin" class="block p-2 rounded transition text-yellow-400 hover:bg-gray-700">⚙️ Admin Panel</a>
+                {% endif %}
+            </nav>
+        </div>
+        <div class="bg-gray-200 dark:bg-gray-800 p-2 text-center border-b border-gray-300 dark:border-gray-700">
+            <button onclick="toggleDarkMode()" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700">🌓</button>
+
+            {% if request.state.user %}
+                <p class="mb-2">👤 {{ request.state.user.username }}</p>
+                <!-- NO data-nav! Force real page unload for logout to clear JS properly -->
+                <a href="/auth/logout" class="text-red-400 hover:underline text-xs">Logout</a>
+            {% else %}
+                <a href="/auth/login" data-nav class="text-blue-400 hover:underline block mb-2">Login</a>
+                <a href="/auth/register" data-nav class="text-gray-400 hover:underline text-xs">Create Account</a>
+            {% endif %}
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="bg-gray-800 p-2 text-center border-b border-gray-700 flex-shrink-0">
+            AdSense Placeholder
+        </div>
+
+        <!-- ONLY THIS SECTION CHANGES -->
+        <div id="app-content" class="flex-1 overflow-y-auto p-8 pb-28">
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- PERSISTENT AUDIO PLAYER (Literally never destroyed by navigation) -->
+        <div id="global-player" class="fixed bottom-0 left-64 right-0 bg-gray-950 border-t border-gray-800 p-3 z-50 transform translate-y-full transition-transform duration-300">
+            <div class="flex items-center gap-4 max-w-7xl mx-auto">
+                <img id="player-img" src="" class="w-12 h-12 rounded bg-gray-800 hidden">
+                <div class="flex-1 min-w-0">
+                    <p id="player-title" class="font-bold text-sm truncate">No station playing</p>
+                </div>
+                <audio id="global-audio" controls class="w-96 h-10" style="filter: invert(1) hue-rotate(180deg);"></audio>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const audio = document.getElementById('global-audio');
+        const player = document.getElementById('global-player');
+        const appContent = document.getElementById('app-content');
+
+        // 1. INTERCEPT LINK CLICKS
+        document.addEventListener('click', async (e) => {
+            const link = e.target.closest('a[data-nav]');
+            if (!link) return;
+            
+            e.preventDefault();
+            const url = link.href;
+            
+            // UI Update
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('bg-blue-600/20', 'text-blue-400'));
+            link.classList.add('bg-blue-600/20', 'text-blue-400');
+            
+            try {
+                // redirect: 'manual' prevents fetch from following 303 redirects automatically
+                const res = await fetch(url, { redirect: 'manual' });
+                
+                // If it's a redirect (like admin guard or login), force real page load
+                if (res.status === 0 || (res.status >= 300 && res.status < 400)) {
+                    window.location.href = res.headers.get('Location') || url;
+                    return;
+                }
+                
+                if (!res.ok) throw new Error('Network error');
+                const html = await res.text();
+                
+                // Inject new page content
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newContent = doc.querySelector('#app-content');
+                
+                if (newContent) {
+                    appContent.innerHTML = newContent.innerHTML;
+                    // Re-run scripts (for downloader/transcription)
+                    newContent.querySelectorAll('script').forEach(oldScript => {
+                        const newScript = document.createElement('script');
+                        newScript.textContent = oldScript.textContent;
+                        appContent.appendChild(newScript);
+                    });
+                }
+                
+                history.pushState({}, '', url);
+                appContent.scrollTop = 0;
+            } catch (err) {
+                window.location.href = url; // Fallback
+            }
+        });
+
+        // Handle Back/Forward buttons smoothly
+        window.addEventListener('popstate', async () => {
+            const res = await fetch(window.location.href);
+            const html = await res.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const newContent = doc.querySelector('#app-content');
+            if (newContent) appContent.innerHTML = newContent.innerHTML;
+        });
+
+        // 2. GLOBAL RADIO FUNCTION
+        function playGlobalRadio(url, name, favicon) {
+            if (audio.src !== url) {
+                audio.src = url;
+                audio.play();
+            }
+            document.getElementById('player-title').innerText = name;
+            const img = document.getElementById('player-img');
+            img.src = favicon || '';
+            img.classList.remove('hidden');
+            player.classList.remove('translate-y-full'); // Slide up
+        }
+
+        // 3. DARK MODE TOGGLE
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        }
+        // On page load, apply saved theme
+        
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (
+                savedTheme === 'dark' ||
+                (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+            ) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+
+        
+    </script>
+</body>
+</html>

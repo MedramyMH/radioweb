@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block title %}Image Tools - TunisiaHub{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <h2 class="text-3xl font-bold mb-2">🖼️ Professional Image Studio</h2>
+    <p class="text-gray-400 mb-6">Upload, Crop, Remove Backgrounds, and format perfectly for any platform.</p>
+
+    <form id="process-form" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-24">
+        
+        <!-- LEFT: Tools & Settings -->
+        <div class="space-y-4">
+            <!-- 1. Source -->
+            <div class="bg-gray-800 p-4 rounded-xl">
+                <h3 class="font-bold mb-3">1. Source Image</h3>
+                <input type="file" id="file-input" accept="image/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 mb-3">
+                <div class="flex gap-2">
+                    <input type="text" id="url-input" placeholder="Paste Image URL..." class="flex-1 bg-gray-900 p-2 rounded border border-gray-700 text-white text-sm">
+                    <button type="button" onclick="fetchUrl()" class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-3 rounded">Fetch</button>
+                </div>
+                <p id="url-status" class="text-xs mt-1 hidden"></p>
+            </div>
+
+            <!-- 2. Quick Edit Tools -->
+            <div class="bg-gray-800 p-4 rounded-xl">
+                <h3 class="font-bold mb-3">2. Quick Edit</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="btn-crop" onclick="startCrop()" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 rounded">✂️ Crop Image</button>
+                    <button type="button" id="btn-apply-crop" onclick="applyCrop()" class="bg-green-600 hover:bg-green-700 text-white text-sm py-2 rounded hidden">✅ Apply Crop</button>
+                    <button type="button" id="btn-remove-bg" onclick="removeBackground()" class="bg-red-600 hover:bg-red-700 text-white text-sm py-2 rounded col-span-2">🪄 Remove Background (AI)</button>
+                </div>
+                <p id="bg-status" class="text-xs text-gray-500 mt-2 hidden text-center"></p>
+            </div>
+
+            <!-- 3. Export Settings -->
+            <div class="bg-gray-800 p-4 rounded-xl">
+                <h3 class="font-bold mb-3">3. Export Settings</h3>
+                <select name="preset" id="preset-select" class="w-full bg-gray-900 p-2 rounded border border-gray-700 text-white text-sm mb-3">
+                    <option value="custom">Keep Current Size</option>
+                    <option value="youtube_thumbnail">YouTube Thumb (1280x720)</option>
+                    <option value="facebook_post">Facebook Post (1200x630)</option>
+                    <option value="tiktok_cover">TikTok Cover (1080x1920)</option>
+                    <option value="instagram_post">Instagram Post (1080x1080)</option>
+                </select>
+                
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <input type="number" name="custom_w" id="custom-w" placeholder="Width" class="bg-gray-900 p-2 rounded border border-gray-700 text-white text-sm disabled:opacity-50" disabled>
+                    <input type="number" name="custom_h" id="custom-h" placeholder="Height" class="bg-gray-900 p-2 rounded border border-gray-700 text-white text-sm disabled:opacity-50" disabled>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <select name="quality" class="bg-gray-900 p-2 rounded border border-gray-700 text-white text-sm">
+                        <option value="hd">HD (Small)</option>
+                        <option value="fhd" selected>FHD (Normal)</option>
+                        <option value="uhd">UHD (Max)</option>
+                    </select>
+                    <select name="format" class="bg-gray-900 p-2 rounded border border-gray-700 text-white text-sm">
+                        <option value="JPEG">JPEG</option>
+                        <option value="PNG">PNG (Transparent)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition disabled:opacity-50" disabled>
+                🚀 Final Process & Download
+            </button>
+        </div>
+
+        <!-- RIGHT: Live Preview Canvas -->
+        <div class="lg:col-span-2 bg-gray-800 p-4 rounded-xl flex flex-col">
+            <h3 class="font-bold mb-3">Live Preview</h3>
+            <!-- Added min-h-[500px] and flex items-center justify-center to force container size -->
+            <div class="flex-1 bg-gray-900 rounded-lg overflow-hidden min-h-[500px] relative flex items-center justify-center" id="preview-container">
+                
+                <div id="placeholder-text" class="text-gray-600 text-center absolute z-10">
+                    <p class="text-4xl mb-2">🖼️</p>
+                    <p>Upload an image or paste a URL</p>
+                </div>
+                
+                <!-- FIX: absolute inset-0 w-full h-full object-contain forces the image to be visible and contained -->
+                <img id="preview-image" class="absolute inset-0 w-full h-full object-contain p-2" style="display:none;">
+            </div>
+        </div>
+
+        <input type="hidden" name="image_b64" id="hidden-b64" value="">
+    </form>
+</div>
+
+<!-- Cropper.js CSS & JS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
+<!-- Browser-based Background Removal -->
+<script type="module">
+    import imglyRemoveBackground from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/index.js";
+    
+    window.removeBackground = async function() {
+        const img = document.getElementById('preview-image');
+        if (img.style.display === 'none') return alert("Load an image first");
+
+        const status = document.getElementById('bg-status');
+        const btn = document.getElementById('btn-remove-bg');
+        status.classList.remove('hidden');
+        status.className = "text-xs text-blue-400 mt-2 text-center";
+        btn.disabled = true;
+        btn.innerText = "Loading AI Model...";
+
+        try {
+            const res = await fetch(img.src);
+            const blob = await res.blob();
+            
+            const resultBlob = await imglyRemoveBackground(blob, { 
+                progress: (key, current, total) => {
+                    status.innerText = `Processing AI: ${Math.round((current/total)*100)}%`;
+                }
+            });
+            
+            const url = URL.createObjectURL(resultBlob);
+            updatePreview(url); 
+            status.className = "text-xs text-green-400 mt-2 text-center";
+            status.innerText = "Background removed!";
+        } catch (e) {
+            status.className = "text-xs text-red-400 mt-2 text-center";
+            status.innerText = "Failed. Image might be too large.";
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "🪄 Remove Background (AI)";
+            setTimeout(() => status.classList.add('hidden'), 3000);
+        }
+    };
+</script>
+
+<script>
+    let cropper = null;
+    const previewImg = document.getElementById('preview-image');
+    const hiddenB64 = document.getElementById('hidden-b64');
+    const submitBtn = document.getElementById('submit-btn');
+
+    // 1. HANDLE FILE UPLOAD
+    document.getElementById('file-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => updatePreview(e.target.result);
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // 2. HANDLE URL FETCHING VIA BACKEND PROXY
+    async function fetchUrl() {
+        const url = document.getElementById('url-input').value.trim();
+        const status = document.getElementById('url-status');
+        if (!url) return;
+        
+        status.classList.remove('hidden');
+        status.className = "text-xs text-blue-400 mt-1";
+        status.innerText = "Downloading securely via server...";
+        
+        try {
+            const res = await fetch(`/api/image/fetch-url?url=${encodeURIComponent(url)}`);
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || "Invalid URL or blocked by host");
+            }
+            
+            const data = await res.json();
+            updatePreview(data.base64);
+            
+            status.className = "text-xs text-green-400 mt-1";
+            status.innerText = "Loaded successfully!";
+            setTimeout(() => status.classList.add('hidden'), 2000);
+        } catch (err) {
+            status.className = "text-xs text-red-400 mt-1";
+            status.innerText = err.message; // Shows exact error like "blocked by host"
+        }
+    }
+
+    // 3. GLOBAL PREVIEW UPDATER
+    window.updatePreview = function(src) {
+        destroyCropper();
+        previewImg.src = src;
+        previewImg.style.display = 'block'; // Force display
+        document.getElementById('placeholder-text').style.display = 'none'; // Hide text
+        submitBtn.disabled = false;
+    };
+
+    // 4. CROP TOOL LOGIC
+    function startCrop() {
+        if (previewImg.style.display === 'none') return alert("Load an image first");
+        destroyCropper();
+        
+        // Cropper requires specific inline dimensions to work properly
+        previewImg.style.width = '100%';
+        previewImg.style.height = '100%';
+        
+        cropper = new Cropper(previewImg, {
+            viewMode: 1,
+            responsive: true,
+            autoCropArea: 0.8,
+            background: false
+        });
+        
+        document.getElementById('btn-crop').classList.add('hidden');
+        document.getElementById('btn-apply-crop').classList.remove('hidden');
+    }
+
+    function applyCrop() {
+        if (!cropper) return;
+        const canvas = cropper.getCroppedCanvas();
+        const base64 = canvas.toDataURL('image/png');
+        
+        // Reset styles before updating preview
+        previewImg.style.width = '';
+        previewImg.style.height = '';
+        
+        updatePreview(base64); 
+        document.getElementById('btn-crop').classList.remove('hidden');
+        document.getElementById('btn-apply-crop').classList.add('hidden');
+    }
+
+    function destroyCropper() {
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+            // Reset styles after destroying cropper
+            previewImg.style.width = '';
+            previewImg.style.height = '';
+            document.getElementById('btn-crop').classList.remove('hidden');
+            document.getElementById('btn-apply-crop').classList.add('hidden');
+        }
+    }
+
+    // 5. PRESET DIMENSION HANDLER
+    document.getElementById('preset-select').addEventListener('change', (e) => {
+        const isCustom = e.target.value === 'custom';
+        document.getElementById('custom-w').disabled = !isCustom;
+        document.getElementById('custom-h').disabled = !isCustom;
+    });
+
+    // 6. FINAL FORM SUBMISSION
+    document.getElementById('process-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        hiddenB64.value = previewImg.src;
+        
+        if (!hiddenB64.value) return alert("No image to process");
+
+        const fd = new FormData(this);
+        submitBtn.innerText = "Processing...";
+        submitBtn.disabled = true;
+
+        fetch('/api/image/process', {
+            method: 'POST',
+            body: fd
+        }).then(res => {
+            if (!res.ok) throw new Error('Server processing failed');
+            return res.blob();
+        }).then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'processed_image.jpg'; a.click();
+            window.URL.revokeObjectURL(url);
+        }).catch(err => {
+            alert("Error: " + err.message);
+        }).finally(() => {
+            submitBtn.innerText = "🚀 Final Process & Download";
+            submitBtn.disabled = false;
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Create News - TunisiaHub{% endblock %}
+{% block content %}
+<h2 class="text-3xl font-bold mb-6">Create Article</h2>
+<form action="/admin/news/create" method="POST" class="bg-gray-800 p-6 rounded-xl space-y-4 max-w-4xl">
+    <input type="text" name="title" placeholder="Article Title" required class="w-full bg-gray-900 p-3 rounded border border-gray-700">
+    
+    <select name="category" class="w-full bg-gray-900 p-3 rounded border border-gray-700">
+        <option value="Politics">Politics</option>
+        <option value="Economy">Economy</option>
+        <option value="Tech">Tech</option>
+        <option value="Sports">Sports</option>
+    </select>
+
+    <!-- TinyMCE Integration -->
+    <textarea id="editor" name="content" class="w-full h-96 bg-gray-900 p-3 rounded border border-gray-7 00"></textarea>
+    
+    <input type="text" name="meta_description" placeholder="SEO Meta Description" class="w-full bg-gray-900 p-3 rounded border border-gray-700">
+    
+    <label class="flex items-center gap-2">
+        <input type="checkbox" name="is_featured" class="w-5 h-5">
+        <span>Featured Article</span>
+    </label>
+
+    <button type="submit" class="bg-green-600 px-6 py-3 rounded font-bold hover:bg-green-700">Publish</button>
+</form>
+
+<!-- TinyMCE Cloud Script -->
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+    tinymce.init({
+        selector: '#editor',
+        menubar: true,
+        plugins: 'image link lists code',
+        toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist | image link | removeformat',
+        images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
+            // Handle image upload to S3/R2 here. For now, return base64.
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(blobInfo.blob());
+        })
+    });
+</script>
+{% endblock %}

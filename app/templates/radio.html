@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Radio - TunisiaHub{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-3xl font-bold">📻 Web Radio</h2>
+    <div class="flex gap-2">
+        {% if user %}
+            <a href="/radio?show_favs=true" data-nav class="px-4 py-2 rounded {% if show_favs %}bg-yellow-600{% else %}bg-gray-800 hover:bg-gray-700{% endif %}">❤️ My Favorites</a>
+            <a href="/radio" data-nav class="px-4 py-2 rounded bg-gray-800 hover:bg-gray-700">All Stations</a>
+        {% endif %}
+        <form class="flex gap-2">
+            <input type="text" name="q" placeholder="Search..." value="{{ request.query_params.get('q', '') }}" class="bg-gray-800 px-4 py-2 rounded border border-gray-700">
+            <button class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">Search</button>
+        </form>
+    </div>
+</div>
+
+<div class="grid grid-cols-3 gap-4">
+    {% for station in stations %}
+    <div class="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition relative group">
+        <div class="cursor-pointer" onclick="playGlobalRadio('{{ station.url_resolved }}', '{{ station.name }}', '{{ station.favicon }}')">
+            <div class="flex items-center gap-3">
+                <img src="{{ station.favicon or 'https://via.placeholder.com/40' }}" class="w-10 h-10 rounded bg-gray-700">
+                <div class="overflow-hidden">
+                    <h3 class="font-semibold truncate">{{ station.name }}</h3>
+                    <p class="text-sm text-gray-400 truncate">{{ station.tags or 'Radio' }}</p>
+                </div>
+            </div>
+        </div>
+        
+        {% if user %}
+        <button onclick="event.stopPropagation(); toggleFav(this, '{{ station.stationuuid }}', '{{ station.name }}', '{{ station.url_resolved }}', '{{ station.favicon }}')"
+            class="absolute top-2 right-2 text-xl opacity-0 group-hover:opacity-100 transition {% if show_favs %}text-red-500 opacity-100{% else %}text-gray-500 hover:text-red-500{% endif %}">
+            {% if show_favs %}❤️{% else %}🤍{% endif %}
+        </button>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    async function toggleFav(btn, uuid, name, url, favicon) {
+        const isFav = btn.innerText.trim() === '❤️';
+        const fd = new FormData();
+        fd.append('uuid', uuid); fd.append('name', name); fd.append('url', url); fd.append('favicon', favicon);
+        
+        const res = await fetch(`/api/favorites/${isFav ? 'remove' : 'add'}`, { method: 'POST', body: fd });
+        if (res.ok) {
+            btn.innerText = isFav ? '🤍' : '❤️';
+            btn.classList.toggle('text-red-500', !isFav);
+            btn.classList.toggle('text-gray-500', isFav);
+        }
+    }
+</script>
+{% endblock %}

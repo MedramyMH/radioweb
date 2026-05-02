@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: tunisiahub
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: postgresql://neondb_owner:npg_Ds7GeOJ2lruU@ep-still-fire-an80qqz5-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+        fromDatabase:
+          name: tunisiadb
+          property: connectionString
+      - key: npg_Ds7GeOJ2lruU
+        generateValue: true
+databases:
+  - name: tunisiadb
+    plan: free

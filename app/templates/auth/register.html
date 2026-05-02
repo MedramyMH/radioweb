@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto mt-20 bg-slate-800 p-8 rounded-xl shadow-lg">
+    <h2 class="text-2xl font-bold mb-6 text-center">Register</h2>
+    {% if error %}<p class="text-red-400 text-sm mb-4 text-center">{{ error }}</p>{% endif %}
+    <form action="/auth/register" method="POST" class="space-y-4">
+        <input type="text" name="username" placeholder="Username" required class="w-full bg-slate-900 p-3 rounded border border-slate-600 focus:border-blue-500 outline-none">
+        <input type="email" name="email" placeholder="Email" required class="w-full bg-slate-900 p-3 rounded border border-slate-600 focus:border-blue-500 outline-none">
+        <input type="password" name="password" placeholder="Password" required class="w-full bg-slate-900 p-3 rounded border border-slate-600 focus:border-blue-500 outline-none">
+        <button type="submit" class="w-full bg-green-600 p-3 rounded font-bold hover:bg-green-700">Create Account</button>
+    </form>
+    <p class="text-center text-slate-400 text-sm mt-4">Already have an account? <a href="/login" class="text-blue-400 hover:underline">Login</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} - TunisiaHub{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto flex gap-8">
+    
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 max-w-3xl">
+        <article>
+            <div class="flex items-center gap-4 mb-4 text-sm text-gray-400">
+                <span class="text-xs text-blue-400 bg-blue-400/10 px-2 py-1 rounded">{{ article.category }}</span>
+            </div>
+            
+            <h1 class="text-4xl font-extrabold text-white mb-6 leading-tight">{{ article.title }}</h1>
+            
+            {% if article.image_url %}
+                <img src="{{ article.image_url }}" class="w-full rounded-xl mb-6 shadow-lg">
+            {% endif %}
+
+            <!-- ADSENSE TOP AD -->
+            <div class="bg-gray-800 p-4 text-center mb-6 rounded-lg border border-dashed border-gray-700">
+                <p class="text-xs text-gray-500 mb-2">ADVERTISEMENT</p>
+                <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXX" data-ad-slot="XXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>
+            </div>
+
+            <!-- ARTICLE BODY -->
+            <!-- whitespace-pre-wrap is the magic class that fixes spacing/fonts -->
+            <div class="text-gray-300 leading-relaxed mb-8 text-lg whitespace-pre-wrap break-words [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:text-xl [&_h3]:font-bold [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l-4 [&_blockquote]:border-blue-500 [&_blockquote]:pl-4 [&_blockquote]:italic [&_img]:rounded-lg [&_img]:my-4">
+                {{ article.content | safe }}
+            </div>
+
+            <!-- ADSENSE BOTTOM AD -->
+            <div class="bg-gray-800 p-4 text-center mt-8 rounded-lg border border-dashed border-gray-700">
+                <p class="text-xs text-gray-500 mb-2">ADVERTISEMENT</p>
+                <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXX" data-ad-slot="XXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>
+            </div>
+        </article>
+    </main>
+
+    <!-- SIDEBAR -->
+    <aside class="w-80 flex-shrink-0 space-y-8">
+        
+        <div class="bg-gray-800 p-4 text-center rounded-xl border border-dashed border-gray-700">
+            <p class="text-xs text-gray-500 mb-2">SPONSORED</p>
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXX" data-ad-slot="XXXX" data-ad-format="rectangle"></ins>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl">
+            <h3 class="text-lg font-bold text-white mb-4 border-b border-gray-700 pb-2">🔥 Recommended</h3>
+            <div class="space-y-3">
+                {% for rec in recommended %}
+                <a href="/news/{{ rec.id }}" data-nav class="flex gap-3 group">
+                    {% if rec.image_url %}
+                        <img src="{{ rec.image_url }}" class="w-16 h-16 rounded object-cover flex-shrink-0">
+                    {% else %}
+                        <div class="w-16 h-16 rounded bg-gray-700 flex-shrink-0"></div>
+                    {% endif %}
+                    <h4 class="text-sm text-gray-300 group-hover:text-white transition line-clamp-2">{{ rec.title }}</h4>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl">
+            <h3 class="text-lg font-bold text-white mb-4 border-b border-gray-700 pb-2">🕰️ Latest News</h3>
+            <ul class="space-y-3">
+                {% for last in last_news %}
+                <li>
+                    <a href="/news/{{ last.id }}" data-nav class="text-sm text-gray-400 hover:text-blue-400 transition flex items-start gap-2">
+                        <span class="text-blue-500 mt-1">•</span>
+                        <span class="line-clamp-2">{{ last.title }}</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+    </aside>
+</div>
+{% endblock %}
