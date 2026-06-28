@@ -1,13 +1,20 @@
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from app.database import engine, Base, init_db
-from app.routes import radio, news, downloader, transcription, admin, auth_routes
 from app.routes import radio, news, downloader, transcription, admin, auth_routes, tools
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()   # FIX: was missing await — tables were never created
+    yield
+
+# FIX: Only ONE app instance. Previously two were created; the second one
+# overwrote the first, losing the middleware, static mount, and all routers.
+app = FastAPI(lifespan=lifespan)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
@@ -18,10 +25,6 @@ async def add_user_to_request(request: Request, call_next):
     request.state.user = await get_current_user(request)
     response = await call_next(request)
     return response
-
-@app.on_event("startup")
-async def startup():
-    await init_db() # Creates missing tables safely!
 
 app.include_router(auth_routes.router, prefix="/auth", tags=["Auth"])
 app.include_router(radio.router, tags=["Radio"])

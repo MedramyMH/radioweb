@@ -1,269 +1,1113 @@
 {% extends "base.html" %}
-{% block title %}Image Tools - TunisiaHub{% endblock %}
+{% block title %}Image Studio — TunisiaHub{% endblock %}
 {% block content %}
-<div class="max-w-6xl mx-auto">
-    <h2 class="text-3xl font-bold mb-2">🖼️ Professional Image Studio</h2>
-    <p class="text-gray-400 mb-6">Upload, Crop, Remove Backgrounds, and format perfectly for any platform.</p>
 
-    <form id="process-form" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-24">
-        
-        <!-- LEFT: Tools & Settings -->
-        <div class="space-y-4">
-            <!-- 1. Source -->
-            <div class="bg-gray-800 p-4 rounded-xl">
-                <h3 class="font-bold mb-3">1. Source Image</h3>
-                <input type="file" id="file-input" accept="image/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 mb-3">
-                <div class="flex gap-2">
-                    <input type="text" id="url-input" placeholder="Paste Image URL..." class="flex-1 bg-gray-900 p-2 rounded border border-gray-700 text-white text-sm">
-                    <button type="button" onclick="fetchUrl()" class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-3 rounded">Fetch</button>
-                </div>
-                <p id="url-status" class="text-xs mt-1 hidden"></p>
-            </div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
 
-            <!-- 2. Quick Edit Tools -->
-            <div class="bg-gray-800 p-4 rounded-xl">
-                <h3 class="font-bold mb-3">2. Quick Edit</h3>
-                <div class="grid grid-cols-2 gap-2">
-                    <button type="button" id="btn-crop" onclick="startCrop()" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 rounded">✂️ Crop Image</button>
-                    <button type="button" id="btn-apply-crop" onclick="applyCrop()" class="bg-green-600 hover:bg-green-700 text-white text-sm py-2 rounded hidden">✅ Apply Crop</button>
-                    <button type="button" id="btn-remove-bg" onclick="removeBackground()" class="bg-red-600 hover:bg-red-700 text-white text-sm py-2 rounded col-span-2">🪄 Remove Background (AI)</button>
-                </div>
-                <p id="bg-status" class="text-xs text-gray-500 mt-2 hidden text-center"></p>
-            </div>
+<style>
+  :root {
+    --panel-bg: #ffffff;
+    --panel-border: #e5e7eb;
+    --section-label: #6b7280;
+    --input-bg: #f9fafb;
+    --input-border: #d1d5db;
+    --input-text: #111827;
+    --tool-btn-bg: #f3f4f6;
+    --tool-btn-text: #374151;
+    --tool-btn-hover: #e5e7eb;
+    --checker-a: #e5e7eb;
+    --checker-b: #ffffff;
+    --adjust-label: #374151;
+    --badge-bg: #f3f4f6;
+    --badge-text: #6b7280;
+  }
+  .dark {
+    --panel-bg: #1e2433;
+    --panel-border: #2d3548;
+    --section-label: #8b95a8;
+    --input-bg: #111827;
+    --input-border: #374151;
+    --input-text: #f1f5f9;
+    --tool-btn-bg: #252d3d;
+    --tool-btn-text: #cbd5e1;
+    --tool-btn-hover: #2e3a4e;
+    --checker-a: #2a3042;
+    --checker-b: #1e2433;
+    --adjust-label: #cbd5e1;
+    --badge-bg: #252d3d;
+    --badge-text: #94a3b8;
+  }
 
-            <!-- 3. Export Settings -->
-            <div class="bg-gray-800 p-4 rounded-xl">
-                <h3 class="font-bold mb-3">3. Export Settings</h3>
-                <select name="preset" id="preset-select" class="w-full bg-gray-900 p-2 rounded border border-gray-700 text-white text-sm mb-3">
-                    <option value="custom">Keep Current Size</option>
-                    <option value="youtube_thumbnail">YouTube Thumb (1280x720)</option>
-                    <option value="facebook_post">Facebook Post (1200x630)</option>
-                    <option value="tiktok_cover">TikTok Cover (1080x1920)</option>
-                    <option value="instagram_post">Instagram Post (1080x1080)</option>
-                </select>
-                
-                <div class="grid grid-cols-2 gap-2 mb-3">
-                    <input type="number" name="custom_w" id="custom-w" placeholder="Width" class="bg-gray-900 p-2 rounded border border-gray-700 text-white text-sm disabled:opacity-50" disabled>
-                    <input type="number" name="custom_h" id="custom-h" placeholder="Height" class="bg-gray-900 p-2 rounded border border-gray-700 text-white text-sm disabled:opacity-50" disabled>
-                </div>
+  #studio-shell {
+    display: grid;
+    grid-template-columns: 285px 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 0;
+    height: calc(100vh - 88px);
+    min-height: 580px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
 
-                <div class="grid grid-cols-2 gap-2">
-                    <select name="quality" class="bg-gray-900 p-2 rounded border border-gray-700 text-white text-sm">
-                        <option value="hd">HD (Small)</option>
-                        <option value="fhd" selected>FHD (Normal)</option>
-                        <option value="uhd">UHD (Max)</option>
-                    </select>
-                    <select name="format" class="bg-gray-900 p-2 rounded border border-gray-700 text-white text-sm">
-                        <option value="JPEG">JPEG</option>
-                        <option value="PNG">PNG (Transparent)</option>
-                    </select>
-                </div>
-            </div>
+  #studio-header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--panel-border);
+    margin-bottom: 0;
+  }
 
-            <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition disabled:opacity-50" disabled>
-                🚀 Final Process & Download
-            </button>
+  #studio-sidebar {
+    border-right: 1px solid var(--panel-border);
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--panel-border) transparent;
+  }
+  #studio-sidebar::-webkit-scrollbar { width: 4px; }
+  #studio-sidebar::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 99px; }
+
+  #studio-canvas-area {
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+    overflow: hidden;
+    gap: 10px;
+  }
+
+  .panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 13px;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--section-label);
+    margin-bottom: 9px;
+  }
+
+  .inp {
+    width: 100%;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--input-text);
+    font-size: 12.5px;
+    outline: none;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+  }
+  .inp:focus { border-color: #3b82f6; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 7px 13px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+  .btn:disabled { opacity: 0.38; cursor: not-allowed; }
+  .btn-primary  { background: #3b82f6; color: #fff; }
+  .btn-primary:hover:not(:disabled)  { background: #2563eb; }
+  .btn-success  { background: #10b981; color: #fff; }
+  .btn-success:hover:not(:disabled)  { background: #059669; }
+  .btn-danger   { background: #ef4444; color: #fff; }
+  .btn-danger:hover:not(:disabled)   { background: #dc2626; }
+  .btn-purple   { background: #8b5cf6; color: #fff; }
+  .btn-purple:hover:not(:disabled)   { background: #7c3aed; }
+  .btn-ghost {
+    background: var(--tool-btn-bg);
+    color: var(--tool-btn-text);
+    border: 1.5px solid var(--panel-border);
+  }
+  .btn-ghost:hover:not(:disabled) { background: var(--tool-btn-hover); }
+  .btn-sm   { padding: 5px 9px; font-size: 11.5px; }
+  .btn-full { width: 100%; }
+
+  .icon-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 9px 5px;
+    border-radius: 10px;
+    border: 1.5px solid transparent;
+    background: var(--tool-btn-bg);
+    color: var(--tool-btn-text);
+    font-size: 10.5px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    line-height: 1.2;
+    position: relative;
+  }
+  .icon-btn .ico { font-size: 19px; line-height: 1; }
+  .icon-btn:hover { background: var(--tool-btn-hover); transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,.1); }
+  .icon-btn.active { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+  .dark .icon-btn.active { background: #1e3a5f; color: #60a5fa; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+  .slider-label { font-size: 11.5px; font-weight: 500; color: var(--adjust-label); width: 74px; flex-shrink: 0; }
+  .slider-val { font-size: 11px; font-weight: 700; color: #3b82f6; width: 30px; text-align: right; flex-shrink: 0; }
+  input[type=range] { flex: 1; accent-color: #3b82f6; cursor: pointer; }
+
+  #preview-area {
+    flex: 1;
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      repeating-conic-gradient(var(--checker-a) 0% 25%, var(--checker-b) 0% 50%)
+      0 0 / 20px 20px;
+    border: 1px solid var(--panel-border);
+    min-height: 380px;
+  }
+
+  #main-img  { max-width:100%; max-height:100%; object-fit:contain; display:none; border-radius:6px; }
+  #canvas-el { max-width:100%; max-height:100%; object-fit:contain; display:none; border-radius:6px; transition: filter 0.12s; }
+
+  .progress-bar { height: 5px; background: var(--panel-border); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg,#3b82f6,#8b5cf6,#ec4899); border-radius: 99px; transition: width 0.25s ease; }
+
+  #bg-status-box {
+    border-radius: 9px;
+    padding: 9px 11px;
+    font-size: 11.5px;
+    line-height: 1.55;
+    margin-bottom: 10px;
+  }
+  #bg-status-box.info  { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  #bg-status-box.ok    { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+  #bg-status-box.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+  .dark #bg-status-box.info  { background: #1e3a5f; color: #93c5fd; border-color: #2563eb; }
+  .dark #bg-status-box.ok    { background: #14532d; color: #86efac; border-color: #16a34a; }
+  .dark #bg-status-box.error { background: #450a0a; color: #fca5a5; border-color: #dc2626; }
+
+  #canvas-overlay {
+    position: absolute; inset: 0;
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 10px; z-index: 10; color: white;
+  }
+  #canvas-overlay.visible { display: flex; }
+  .spinner { width:38px; height:38px; border:4px solid rgba(255,255,255,.2); border-top-color:#fff; border-radius:50%; animation: spin 0.75s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .swatch { width:20px; height:20px; border-radius:50%; border:1.5px solid var(--panel-border); display:inline-block; flex-shrink:0; }
+
+  .badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:600; background:var(--badge-bg); color:var(--badge-text); }
+
+  [data-tip] { position: relative; }
+  [data-tip]::after { content:attr(data-tip); position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); background:#1e293b; color:#f1f5f9; font-size:11px; padding:3px 8px; border-radius:5px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity 0.15s; z-index:200; }
+  [data-tip]:hover::after { opacity:1; }
+
+  #drop-zone { border:2px dashed var(--input-border); border-radius:10px; padding:16px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative; }
+  #drop-zone:hover, #drop-zone.dragover { border-color:#3b82f6; background:rgba(59,130,246,.05); }
+  #drop-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+</style>
+
+<div id="studio-shell">
+
+  <!-- HEADER -->
+  <div id="studio-header">
+    <div>
+      <h2 style="font-size:19px;font-weight:700;color:var(--input-text);margin:0;">🖼 Image Studio</h2>
+      <p style="font-size:12px;color:var(--section-label);margin:2px 0 0;">Crop · Adjust · Filters · AI Background Removal · Export</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span id="img-info" class="badge" style="display:none;"></span>
+      <button class="btn btn-ghost btn-sm" onclick="resetAll()" data-tip="Clear and start over">🗑 Reset</button>
+      <button id="download-btn" class="btn btn-success" onclick="downloadImage()" disabled>⬇️ Download</button>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="studio-sidebar">
+
+    <!-- 1. Load -->
+    <div class="panel">
+      <div class="section-label">1 · Load Image</div>
+      <div id="drop-zone">
+        <input type="file" id="file-input" accept="image/*">
+        <div style="font-size:26px;margin-bottom:5px;">📁</div>
+        <p style="font-size:12px;font-weight:600;color:var(--input-text);">Drop here or click to upload</p>
+        <p style="font-size:11px;color:var(--section-label);margin-top:2px;">JPG · PNG · WebP · GIF</p>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:9px;">
+        <input type="text" id="url-input" placeholder="Or paste image URL…" class="inp" style="flex:1;width:auto;">
+        <button class="btn btn-ghost btn-sm" onclick="fetchUrl()" data-tip="Load from URL">↓</button>
+      </div>
+      <p id="url-status" style="font-size:11px;margin-top:5px;display:none;"></p>
+    </div>
+
+    <!-- 2. Edit Tools -->
+    <div class="panel" style="flex:1;">
+      <div class="section-label">2 · Edit Tools</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:12px;">
+        <button class="icon-btn active" data-tab="tab-crop"    onclick="switchTab(this,'tab-crop')">   <span class="ico">✂️</span>Crop</button>
+        <button class="icon-btn"        data-tab="tab-adjust"  onclick="switchTab(this,'tab-adjust')"> <span class="ico">🎛</span>Adjust</button>
+        <button class="icon-btn"        data-tab="tab-filters" onclick="switchTab(this,'tab-filters')"><span class="ico">✨</span>Filters</button>
+        <button class="icon-btn"        data-tab="tab-bg"      onclick="switchTab(this,'tab-bg')">     <span class="ico">🪄</span>BG</button>
+      </div>
+
+      <!-- Crop -->
+      <div id="tab-crop" class="tab-panel active">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+          <button class="btn btn-purple"  onclick="startCrop()">✂️ Free Crop</button>
+          <button class="btn btn-success" id="apply-crop-btn" onclick="applyCrop()" style="display:none;">✅ Apply</button>
+          <button class="btn btn-ghost"   onclick="rotateCW()"  data-tip="Rotate 90° CW">↻ Rotate CW</button>
+          <button class="btn btn-ghost"   onclick="rotateCCW()" data-tip="Rotate 90° CCW">↺ Rotate CCW</button>
+          <button class="btn btn-ghost"   onclick="flipH()"     data-tip="Mirror horizontally">↔ Flip H</button>
+          <button class="btn btn-ghost"   onclick="flipV()"     data-tip="Mirror vertically">↕ Flip V</button>
+        </div>
+        <div class="section-label" style="margin-top:2px;">Aspect Ratio Lock</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;">
+          <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(16/9)"> <span class="ico" style="font-size:15px;">📺</span>16:9</button>
+          <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(1)">    <span class="ico" style="font-size:15px;">⬛</span>1:1</button>
+          <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(4/3)">  <span class="ico" style="font-size:15px;">🖼</span>4:3</button>
+          <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(9/16)"> <span class="ico" style="font-size:15px;">📱</span>9:16</button>
+          <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(3/2)">  <span class="ico" style="font-size:15px;">📷</span>3:2</button>
+          <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(NaN)">  <span class="ico" style="font-size:15px;">✏️</span>Free</button>
+        </div>
+      </div>
+
+      <!-- Adjust -->
+      <div id="tab-adjust" class="tab-panel">
+        <div class="slider-row"><span class="slider-label">Brightness</span><input type="range" id="r-brightness" min="-100" max="100" value="0" oninput="sv('brightness');liveFilter();"><span class="slider-val" id="v-brightness">0</span></div>
+        <div class="slider-row"><span class="slider-label">Contrast</span>  <input type="range" id="r-contrast"   min="-100" max="100" value="0" oninput="sv('contrast');liveFilter();">  <span class="slider-val" id="v-contrast">0</span></div>
+        <div class="slider-row"><span class="slider-label">Saturation</span><input type="range" id="r-saturation" min="-100" max="100" value="0" oninput="sv('saturation');liveFilter();"><span class="slider-val" id="v-saturation">0</span></div>
+        <div class="slider-row"><span class="slider-label">Hue Rotate</span><input type="range" id="r-hue"        min="-180" max="180" value="0" oninput="sv('hue');liveFilter();">        <span class="slider-val" id="v-hue">0</span></div>
+        <div class="slider-row"><span class="slider-label">Blur</span>      <input type="range" id="r-blur"       min="0" max="20" value="0" step="0.5" oninput="sv('blur');liveFilter();"><span class="slider-val" id="v-blur">0</span></div>
+        <div class="slider-row"><span class="slider-label">Opacity</span>   <input type="range" id="r-opacity"    min="0" max="100" value="100" oninput="sv('opacity');liveFilter();">   <span class="slider-val" id="v-opacity">100</span></div>
+        <div class="slider-row"><span class="slider-label">Sharpen</span>   <input type="range" id="r-sharpen"    min="0" max="5"   value="0"   oninput="sv('sharpen');liveFilter();">   <span class="slider-val" id="v-sharpen">0</span></div>
+        <button class="btn btn-ghost btn-sm btn-full" style="margin-top:5px;" onclick="resetSliders()">↺ Reset Adjustments</button>
+      </div>
+
+      <!-- Filters -->
+      <div id="tab-filters" class="tab-panel">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;">
+          <button class="icon-btn" onclick="applyPresetFilter('none')">     <span class="ico">🏔</span>Original</button>
+          <button class="icon-btn" onclick="applyPresetFilter('grayscale')"><span class="ico">⬜</span>B&W</button>
+          <button class="icon-btn" onclick="applyPresetFilter('sepia')">    <span class="ico">🟫</span>Sepia</button>
+          <button class="icon-btn" onclick="applyPresetFilter('invert')">   <span class="ico">🔄</span>Invert</button>
+          <button class="icon-btn" onclick="applyPresetFilter('vintage')">  <span class="ico">📷</span>Vintage</button>
+          <button class="icon-btn" onclick="applyPresetFilter('cool')">     <span class="ico">🧊</span>Cool</button>
+          <button class="icon-btn" onclick="applyPresetFilter('warm')">     <span class="ico">🌅</span>Warm</button>
+          <button class="icon-btn" onclick="applyPresetFilter('dramatic')"> <span class="ico">🎭</span>Dramatic</button>
+          <button class="icon-btn" onclick="applyPresetFilter('fade')">     <span class="ico">🌫</span>Fade</button>
+          <button class="icon-btn" onclick="applyPresetFilter('neon')">     <span class="ico">🌈</span>Neon</button>
+          <button class="icon-btn" onclick="applyPresetFilter('noir')">     <span class="ico">🎬</span>Noir</button>
+          <button class="icon-btn" onclick="applyPresetFilter('summer')">   <span class="ico">☀️</span>Summer</button>
+        </div>
+        <p id="filter-active" style="font-size:11px;color:#3b82f6;text-align:center;margin-top:8px;font-weight:600;min-height:16px;"></p>
+      </div>
+
+      <!-- BG Removal -->
+      <div id="tab-bg" class="tab-panel">
+
+        <div id="bg-status-box" class="info" style="margin-bottom:10px;">
+          <strong>🤖 AI Background Removal</strong><br>
+          Runs on your server via Python. Supports multiple AI models — <strong>BiRefNet Portrait</strong> gives the best results for people &amp; hair.
         </div>
 
-        <!-- RIGHT: Live Preview Canvas -->
-        <div class="lg:col-span-2 bg-gray-800 p-4 rounded-xl flex flex-col">
-            <h3 class="font-bold mb-3">Live Preview</h3>
-            <!-- Added min-h-[500px] and flex items-center justify-center to force container size -->
-            <div class="flex-1 bg-gray-900 rounded-lg overflow-hidden min-h-[500px] relative flex items-center justify-center" id="preview-container">
-                
-                <div id="placeholder-text" class="text-gray-600 text-center absolute z-10">
-                    <p class="text-4xl mb-2">🖼️</p>
-                    <p>Upload an image or paste a URL</p>
-                </div>
-                
-                <!-- FIX: absolute inset-0 w-full h-full object-contain forces the image to be visible and contained -->
-                <img id="preview-image" class="absolute inset-0 w-full h-full object-contain p-2" style="display:none;">
-            </div>
+        <!-- Model selector -->
+        <div class="section-label">AI Model</div>
+        <select id="bg-model" class="inp" style="margin-bottom:8px;">
+          <option value="birefnet-portrait">⭐ BiRefNet Portrait — Best for people</option>
+          <option value="isnet-general-use">IsNet General — Great all-purpose</option>
+          <option value="u2net_human_seg">U2Net Human — Fast human seg</option>
+          <option value="u2net">U2Net — Fast, general</option>
+        </select>
+
+        <!-- Alpha matting toggle -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-size:12px;font-weight:600;color:var(--adjust-label);">Alpha Matting <span style="font-size:10px;color:var(--section-label);">(refines hair/edges)</span></span>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" id="bg-alpha-matting" checked style="width:14px;height:14px;accent-color:#3b82f6;">
+            <span style="font-size:11px;color:var(--section-label);">On</span>
+          </label>
         </div>
 
-        <input type="hidden" name="image_b64" id="hidden-b64" value="">
-    </form>
+        <!-- Remove button -->
+        <button class="btn btn-danger btn-full" id="bg-remove-btn" onclick="removeBackground()" style="padding:12px;font-size:13px;margin-bottom:8px;">
+          🪄 Remove Background
+        </button>
+
+        <!-- Progress -->
+        <div id="bg-progress-wrap" style="display:none;margin-bottom:10px;">
+          <div class="progress-bar"><div class="progress-fill" id="bg-progress" style="width:0%"></div></div>
+          <p id="bg-progress-label" style="font-size:11px;color:var(--section-label);text-align:center;margin-top:4px;"></p>
+        </div>
+
+        <!-- Restore -->
+        <button class="btn btn-ghost btn-sm btn-full" id="bg-restore-btn" onclick="restoreOriginal()" style="display:none;margin-bottom:12px;">↩ Restore Original</button>
+
+        <!-- Replace BG color -->
+        <div class="section-label">Replace Background Color</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px;">
+          <button class="icon-btn" onclick="setBgColor('transparent')" data-tip="Keep transparent">
+            <span class="swatch" style="background:repeating-conic-gradient(#ccc 0% 25%,#fff 0% 50%) 0 0/8px 8px;"></span>None
+          </button>
+          <button class="icon-btn" onclick="setBgColor('#ffffff')" data-tip="White">
+            <span class="swatch" style="background:#fff;"></span>White
+          </button>
+          <button class="icon-btn" onclick="setBgColor('#000000')" data-tip="Black">
+            <span class="swatch" style="background:#000;"></span>Black
+          </button>
+          <button class="icon-btn" onclick="setBgColor('#1e293b')" data-tip="Dark navy">
+            <span class="swatch" style="background:#1e293b;"></span>Dark
+          </button>
+          <button class="icon-btn" onclick="setBgColor('#eff6ff')" data-tip="Light blue">
+            <span class="swatch" style="background:#eff6ff;border-color:#bfdbfe;"></span>Sky
+          </button>
+          <button class="icon-btn" onclick="setBgColor('#fef3c7')" data-tip="Cream">
+            <span class="swatch" style="background:#fef3c7;"></span>Cream
+          </button>
+          <button class="icon-btn" onclick="setBgColor('#f0fdf4')" data-tip="Mint">
+            <span class="swatch" style="background:#f0fdf4;"></span>Mint
+          </button>
+          <label class="icon-btn" data-tip="Pick any color" style="cursor:pointer;">
+            <span class="ico" style="font-size:15px;">🎨</span>Custom
+            <input type="color" id="custom-bg-color" style="position:absolute;opacity:0;width:0;height:0;" oninput="setBgColor(this.value)">
+          </label>
+        </div>
+
+        <!-- Replace BG with image -->
+        <div class="section-label">Replace with Image</div>
+        <label class="btn btn-ghost btn-sm btn-full" style="cursor:pointer;display:inline-flex;">
+          📂 Choose Background Image
+          <input type="file" id="bg-image-input" accept="image/*" style="display:none;" onchange="setBgImage(this)">
+        </label>
+
+        <!-- Tip -->
+        <p style="font-size:10.5px;color:var(--section-label);margin-top:10px;line-height:1.5;">
+          💡 <strong>First use</strong> downloads the model (~50–170 MB) to your server cache. Subsequent runs are instant.
+        </p>
+      </div>
+    </div>
+
+    <!-- 3. Export -->
+    <div class="panel">
+      <div class="section-label">3 · Export</div>
+      <select id="preset-select" class="inp" style="margin-bottom:7px;" onchange="toggleCustomSize()">
+        <option value="original">Keep Original Size</option>
+        <optgroup label="── Social Media ──">
+          <option value="1280,720">YouTube Thumbnail (1280×720)</option>
+          <option value="1200,630">Facebook Post (1200×630)</option>
+          <option value="1080,1080">Instagram Square (1080×1080)</option>
+          <option value="1080,1920">Instagram Story / TikTok (1080×1920)</option>
+          <option value="1600,900">Twitter / X (1600×900)</option>
+          <option value="820,312">Facebook Cover (820×312)</option>
+          <option value="1584,396">LinkedIn Banner (1584×396)</option>
+          <option value="2560,1440">YouTube Channel Art (2560×1440)</option>
+        </optgroup>
+        <optgroup label="── Print (300dpi) ──">
+          <option value="2480,3508">A4 Portrait</option>
+          <option value="3508,2480">A4 Landscape</option>
+          <option value="3508,4961">A3 Portrait</option>
+        </optgroup>
+        <optgroup label="── Custom ──">
+          <option value="custom">Custom Size…</option>
+        </optgroup>
+      </select>
+      <div id="custom-size-row" style="display:none;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px;">
+        <input type="number" id="custom-w" placeholder="W px" class="inp">
+        <input type="number" id="custom-h" placeholder="H px" class="inp">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:9px;">
+        <select id="quality-select" class="inp">
+          <option value="0.7">Good (small)</option>
+          <option value="0.9" selected>High</option>
+          <option value="1.0">Max quality</option>
+        </select>
+        <select id="format-select" class="inp">
+          <option value="image/jpeg">JPEG</option>
+          <option value="image/png">PNG</option>
+          <option value="image/webp">WebP</option>
+        </select>
+      </div>
+      <button id="download-btn-sidebar" class="btn btn-success btn-full" onclick="downloadImage()" disabled style="padding:11px;font-size:13px;">
+        ⬇️ Download Image
+      </button>
+    </div>
+
+  </div><!-- /sidebar -->
+
+  <!-- CANVAS AREA -->
+  <div id="studio-canvas-area">
+
+    <!-- Toolbar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="zoomIn()"     data-tip="Zoom in">🔍+</button>
+        <button class="btn btn-ghost btn-sm" onclick="zoomOut()"    data-tip="Zoom out">🔍−</button>
+        <button class="btn btn-ghost btn-sm" onclick="zoomFit()"    data-tip="Fit to view">⊡ Fit</button>
+        <button class="btn btn-ghost btn-sm" onclick="zoomActual()" data-tip="100% actual pixels">1:1</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span id="zoom-label" style="font-size:11px;color:var(--section-label);">—</span>
+        <span class="badge" id="canvas-size-badge" style="display:none;"></span>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div id="preview-area">
+      <div id="placeholder" style="text-align:center;color:var(--section-label);pointer-events:none;padding:20px;">
+        <div style="font-size:54px;margin-bottom:12px;line-height:1;">🖼️</div>
+        <p style="font-size:14px;font-weight:600;color:var(--input-text);">Drop an image here or use the sidebar</p>
+        <p style="font-size:12px;margin-top:4px;">Supports JPG · PNG · WebP · GIF</p>
+      </div>
+      <img id="main-img" alt="Preview">
+      <canvas id="canvas-el"></canvas>
+      <div id="canvas-overlay">
+        <div class="spinner"></div>
+        <p id="overlay-label" style="font-size:13px;font-weight:600;">Processing…</p>
+        <div style="width:260px;" class="progress-bar">
+          <div class="progress-fill" id="overlay-progress" style="width:0%;"></div>
+        </div>
+        <p id="overlay-sub" style="font-size:11px;opacity:.75;"></p>
+      </div>
+    </div>
+
+    <!-- Histogram -->
+    <div id="histogram-wrap" style="display:none;">
+      <div class="section-label">Histogram</div>
+      <canvas id="histogram-canvas" height="48" style="width:100%;border-radius:7px;background:var(--input-bg);border:1px solid var(--panel-border);display:block;"></canvas>
+    </div>
+  </div>
+
 </div>
 
-<!-- Cropper.js CSS & JS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<!-- Cropper.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 
-<!-- Browser-based Background Removal -->
-<script type="module">
-    import imglyRemoveBackground from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/index.js";
-    
-    window.removeBackground = async function() {
-        const img = document.getElementById('preview-image');
-        if (img.style.display === 'none') return alert("Load an image first");
-
-        const status = document.getElementById('bg-status');
-        const btn = document.getElementById('btn-remove-bg');
-        status.classList.remove('hidden');
-        status.className = "text-xs text-blue-400 mt-2 text-center";
-        btn.disabled = true;
-        btn.innerText = "Loading AI Model...";
-
-        try {
-            const res = await fetch(img.src);
-            const blob = await res.blob();
-            
-            const resultBlob = await imglyRemoveBackground(blob, { 
-                progress: (key, current, total) => {
-                    status.innerText = `Processing AI: ${Math.round((current/total)*100)}%`;
-                }
-            });
-            
-            const url = URL.createObjectURL(resultBlob);
-            updatePreview(url); 
-            status.className = "text-xs text-green-400 mt-2 text-center";
-            status.innerText = "Background removed!";
-        } catch (e) {
-            status.className = "text-xs text-red-400 mt-2 text-center";
-            status.innerText = "Failed. Image might be too large.";
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "🪄 Remove Background (AI)";
-            setTimeout(() => status.classList.add('hidden'), 3000);
-        }
-    };
-</script>
+<!-- No JS library needed — BG removal runs server-side via /api/image/remove-bg -->
 
 <script>
-    let cropper = null;
-    const previewImg = document.getElementById('preview-image');
-    const hiddenB64 = document.getElementById('hidden-b64');
-    const submitBtn = document.getElementById('submit-btn');
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let workCanvas = document.createElement('canvas');
+let workCtx    = workCanvas.getContext('2d');
+let origDataUrl = null;
+let bgRemovedDataUrl = null;
+let cropper = null;
+let activeFilter = 'none';
+let zoomLevel = 1;
 
-    // 1. HANDLE FILE UPLOAD
-    document.getElementById('file-input').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => updatePreview(e.target.result);
-            reader.readAsDataURL(file);
-        }
+// new***********************************************
+let maskCanvas = document.createElement('canvas');
+let maskCtx = maskCanvas.getContext('2d');
+let drawing = false;
+let brushSize = 20;
+
+const canvasEl    = document.getElementById('canvas-el');
+const mainImg     = document.getElementById('main-img');
+const placeholder = document.getElementById('placeholder');
+const overlay     = document.getElementById('canvas-overlay');
+const overlayLbl  = document.getElementById('overlay-label');
+const overlayPrg  = document.getElementById('overlay-progress');
+const overlaySub  = document.getElementById('overlay-sub');
+
+function setDownloadEnabled(v) {
+  ['download-btn','download-btn-sidebar'].forEach(id => document.getElementById(id).disabled = !v);
+}
+
+// ═══════════════════════════════════════════════
+// LOAD
+// ═══════════════════════════════════════════════
+document.getElementById('file-input').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (f) readFile(f);
+});
+
+function readFile(file) {
+  const r = new FileReader();
+  r.onload = ev => loadImageFromSrc(ev.target.result);
+  r.readAsDataURL(file);
+}
+
+// Drop zone
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) readFile(f);
+});
+
+// Drop on canvas
+document.getElementById('preview-area').addEventListener('dragover', e => e.preventDefault());
+document.getElementById('preview-area').addEventListener('drop', e => {
+  e.preventDefault();
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) readFile(f);
+});
+
+function loadImageFromSrc(src) {
+  destroyCropper();
+  bgRemovedDataUrl = null;
+  activeFilter = 'none';
+  resetSliders();
+  document.getElementById('filter-active').textContent = '';
+  document.getElementById('bg-restore-btn').style.display = 'none';
+  maskCanvas.width = workCanvas.width;
+  maskCanvas.height = workCanvas.height;
+  maskCtx.clearRect(0,0,maskCanvas.width,maskCanvas.height);
+
+  const img = new Image();
+  img.onload = () => {
+    workCanvas.width  = img.naturalWidth;
+    workCanvas.height = img.naturalHeight;
+    workCtx.clearRect(0, 0, workCanvas.width, workCanvas.height);
+    workCtx.drawImage(img, 0, 0);
+    origDataUrl = workCanvas.toDataURL('image/png');
+    renderToDisplay();
+    updateBadges(img.naturalWidth, img.naturalHeight);
+    setDownloadEnabled(true);
+    drawHistogram();
+  };
+  img.onerror = () => showUrlStatus('Could not load image', 'error');
+  img.src = src;
+}
+
+// ═══════════════════════════════════════════════
+// DISPLAY
+// ═══════════════════════════════════════════════
+function renderToDisplay() {
+  placeholder.style.display = 'none';
+  mainImg.style.display = 'none';
+  canvasEl.style.display = 'block';
+  canvasEl.width  = workCanvas.width;
+  canvasEl.height = workCanvas.height;
+  const ctx = canvasEl.getContext('2d');
+  ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+  ctx.drawImage(workCanvas, 0, 0);
+  liveFilter();
+}
+
+function updateBadges(w, h) {
+  const txt = `${w} × ${h} px`;
+  const info = document.getElementById('img-info');
+  const sz   = document.getElementById('canvas-size-badge');
+  info.textContent = txt; info.style.display = 'inline-flex';
+  sz.textContent   = txt; sz.style.display   = 'inline-flex';
+  document.getElementById('zoom-label').textContent = Math.round(zoomLevel * 100) + '%';
+}
+
+// ═══════════════════════════════════════════════
+// URL FETCH
+// ═══════════════════════════════════════════════
+async function fetchUrl() {
+  const url = document.getElementById('url-input').value.trim();
+  if (!url) return;
+  showUrlStatus('Fetching…', '#2563eb');
+  try {
+    const res = await fetch(`/api/image/fetch-url?url=${encodeURIComponent(url)}`);
+    if (!res.ok) { const d = await res.json(); throw new Error(d.detail || 'Failed'); }
+    const data = await res.json();
+    loadImageFromSrc(data.base64);
+    showUrlStatus('✓ Loaded', '#15803d');
+    setTimeout(() => document.getElementById('url-status').style.display = 'none', 2500);
+  } catch(e) { showUrlStatus('✗ ' + e.message, '#dc2626'); }
+}
+window.fetchUrl = fetchUrl;
+
+function showUrlStatus(msg, color) {
+  const el = document.getElementById('url-status');
+  el.textContent = msg;
+  el.style.color = color;
+  el.style.display = 'block';
+}
+
+// ═══════════════════════════════════════════════
+// CROP
+// ═══════════════════════════════════════════════
+function startCrop() {
+  if (!origDataUrl) return alert('Load an image first.');
+  destroyCropper();
+  mainImg.src = workCanvas.toDataURL('image/png');
+  mainImg.style.display = 'block';
+  mainImg.style.maxWidth = '100%';
+  mainImg.style.maxHeight = '100%';
+  canvasEl.style.display = 'none';
+  cropper = new Cropper(mainImg, {
+    viewMode: 1, responsive: true, autoCropArea: 0.85, background: false,
+    ready() { document.getElementById('apply-crop-btn').style.display = 'inline-flex'; }
+  });
+}
+window.startCrop = startCrop;
+
+function applyCrop() {
+  if (!cropper) return;
+  const c = cropper.getCroppedCanvas();
+  workCanvas.width = c.width; workCanvas.height = c.height;
+  workCtx.drawImage(c, 0, 0);
+  destroyCropper();
+  renderToDisplay();
+  updateBadges(c.width, c.height);
+  drawHistogram();
+}
+window.applyCrop = applyCrop;
+
+function destroyCropper() {
+  if (cropper) { cropper.destroy(); cropper = null; }
+  document.getElementById('apply-crop-btn').style.display = 'none';
+  mainImg.style.display = 'none';
+}
+
+function setCropRatio(ratio) {
+  if (!cropper) startCrop();
+  setTimeout(() => { if (cropper) cropper.setAspectRatio(ratio); }, 80);
+}
+window.setCropRatio = setCropRatio;
+
+// ═══════════════════════════════════════════════
+// ROTATE / FLIP
+// ═══════════════════════════════════════════════
+function transformCanvas(angleDeg, sx, sy) {
+  if (!origDataUrl) return;
+  const rad = angleDeg * Math.PI / 180;
+  const rot = angleDeg % 180 !== 0;
+  const tmp = document.createElement('canvas');
+  tmp.width  = rot ? workCanvas.height : workCanvas.width;
+  tmp.height = rot ? workCanvas.width  : workCanvas.height;
+  const ctx = tmp.getContext('2d');
+  ctx.translate(tmp.width / 2, tmp.height / 2);
+  ctx.rotate(rad);
+  ctx.scale(sx, sy);
+  ctx.drawImage(workCanvas, -workCanvas.width / 2, -workCanvas.height / 2);
+  workCanvas.width = tmp.width; workCanvas.height = tmp.height;
+  workCtx.drawImage(tmp, 0, 0);
+  renderToDisplay();
+  updateBadges(workCanvas.width, workCanvas.height);
+}
+function rotateCW()  { transformCanvas(90,  1, 1); }
+function rotateCCW() { transformCanvas(-90, 1, 1); }
+function flipH()     { transformCanvas(0,  -1, 1); }
+function flipV()     { transformCanvas(0,   1,-1); }
+window.rotateCW = rotateCW; window.rotateCCW = rotateCCW;
+window.flipH = flipH; window.flipV = flipV;
+
+// ═══════════════════════════════════════════════
+// ADJUSTMENTS + FILTERS (non-destructive CSS)
+// ═══════════════════════════════════════════════
+function sv(id) {
+  document.getElementById('v-' + id).textContent = document.getElementById('r-' + id).value;
+}
+window.sv = sv;
+
+const PRESETS = {
+  none:     '',
+  grayscale:'grayscale(1)',
+  sepia:    'sepia(1)',
+  invert:   'invert(1)',
+  vintage:  'sepia(.45) contrast(1.1) saturate(.85) brightness(.95)',
+  cool:     'hue-rotate(20deg) saturate(1.25) brightness(1.02)',
+  warm:     'hue-rotate(-15deg) saturate(1.3) brightness(1.05)',
+  dramatic: 'contrast(1.45) saturate(1.2) brightness(.88)',
+  fade:     'contrast(.82) brightness(1.12) saturate(.65)',
+  neon:     'saturate(2) contrast(1.3) hue-rotate(10deg)',
+  noir:     'grayscale(1) contrast(1.5) brightness(.85)',
+  summer:   'hue-rotate(-10deg) saturate(1.5) brightness(1.08) contrast(1.05)',
+};
+
+function buildFilter() {
+  const b  = +document.getElementById('r-brightness').value;
+  const c  = +document.getElementById('r-contrast').value;
+  const s  = +document.getElementById('r-saturation').value;
+  const h  = +document.getElementById('r-hue').value;
+  const bl = +document.getElementById('r-blur').value;
+  const op = +document.getElementById('r-opacity').value;
+  const sh = +document.getElementById('r-sharpen').value;
+  const preset = PRESETS[activeFilter] || '';
+  const sharpen = sh > 0 ? `drop-shadow(0 0 ${sh*.4}px rgba(0,0,0,${sh*.06}))` : '';
+  return `brightness(${1+b/100}) contrast(${1+c/100}) saturate(${1+s/100}) hue-rotate(${h}deg) blur(${bl}px) opacity(${op/100}) ${preset} ${sharpen}`.trim();
+}
+
+function liveFilter() {
+  if (canvasEl.style.display !== 'none') canvasEl.style.filter = buildFilter();
+}
+window.liveFilter = liveFilter;
+
+function applyPresetFilter(name) {
+  if (!origDataUrl) return alert('Load an image first.');
+  activeFilter = name;
+  document.getElementById('filter-active').textContent =
+    name === 'none' ? '' : '✓ ' + name[0].toUpperCase() + name.slice(1) + ' active';
+  liveFilter();
+}
+window.applyPresetFilter = applyPresetFilter;
+
+function resetSliders() {
+  const defs = {brightness:0,contrast:0,saturation:0,hue:0,blur:0,opacity:100,sharpen:0};
+  for (const [k,v] of Object.entries(defs)) {
+    const r = document.getElementById('r-'+k), vEl = document.getElementById('v-'+k);
+    if (r) r.value = v; if (vEl) vEl.textContent = v;
+  }
+  if (canvasEl) canvasEl.style.filter = 'none';
+  activeFilter = 'none';
+  document.getElementById('filter-active').textContent = '';
+}
+window.resetSliders = resetSliders;
+
+// ═══════════════════════════════════════════════
+// BACKGROUND REMOVAL
+// ═══════════════════════════════════════════════
+async function removeBackground() {
+  if (!origDataUrl) return alert('Load an image first.');
+
+  const btn  = document.getElementById('bg-remove-btn');
+  const wrap = document.getElementById('bg-progress-wrap');
+  const bar  = document.getElementById('bg-progress');
+  const lbl  = document.getElementById('bg-progress-label');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Processing…';
+  wrap.style.display = 'block';
+  bar.style.width = '15%';
+  lbl.textContent = 'Uploading to server…';
+  showOverlay('Removing background…', 15);
+
+  try {
+    // Convert working canvas to a Blob for upload
+    const blob = await new Promise((res, rej) =>
+      workCanvas.toBlob(b => b ? res(b) : rej(new Error('Canvas export failed')), 'image/png')
+    );
+
+    bar.style.width = '40%';
+    lbl.textContent = 'AI processing (u2net model)…';
+    overlayPrg.style.width = '40%';
+
+    const formData = new FormData();
+    formData.append('file', blob, 'image.png');
+    formData.append('model', document.getElementById('bg-model').value);
+    formData.append('alpha_matting', document.getElementById('bg-alpha-matting').checked);
+
+    const res = await fetch('/api/image/remove-bg', {
+      method: 'POST',
+      body: formData
     });
 
-    // 2. HANDLE URL FETCHING VIA BACKEND PROXY
-    async function fetchUrl() {
-        const url = document.getElementById('url-input').value.trim();
-        const status = document.getElementById('url-status');
-        if (!url) return;
-        
-        status.classList.remove('hidden');
-        status.className = "text-xs text-blue-400 mt-1";
-        status.innerText = "Downloading securely via server...";
-        
-        try {
-            const res = await fetch(`/api/image/fetch-url?url=${encodeURIComponent(url)}`);
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.detail || "Invalid URL or blocked by host");
-            }
-            
-            const data = await res.json();
-            updatePreview(data.base64);
-            
-            status.className = "text-xs text-green-400 mt-1";
-            status.innerText = "Loaded successfully!";
-            setTimeout(() => status.classList.add('hidden'), 2000);
-        } catch (err) {
-            status.className = "text-xs text-red-400 mt-1";
-            status.innerText = err.message; // Shows exact error like "blocked by host"
-        }
+    bar.style.width = '85%';
+    overlayPrg.style.width = '85%';
+    lbl.textContent = 'Finalizing…';
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Server error');
     }
 
-    // 3. GLOBAL PREVIEW UPDATER
-    window.updatePreview = function(src) {
-        destroyCropper();
-        previewImg.src = src;
-        previewImg.style.display = 'block'; // Force display
-        document.getElementById('placeholder-text').style.display = 'none'; // Hide text
-        submitBtn.disabled = false;
+    const data = await res.json();
+    const b64src = data.base64;
+
+    bar.style.width = '100%';
+    overlayPrg.style.width = '100%';
+
+    const img = new Image();
+    img.onload = () => {
+      // Save for color replacement
+      const tmp = document.createElement('canvas');
+      tmp.width = img.naturalWidth; tmp.height = img.naturalHeight;
+      tmp.getContext('2d').drawImage(img, 0, 0);
+      bgRemovedDataUrl = tmp.toDataURL('image/png');
+
+      workCanvas.width  = img.naturalWidth;
+      workCanvas.height = img.naturalHeight;
+      workCtx.clearRect(0, 0, workCanvas.width, workCanvas.height);
+      workCtx.drawImage(img, 0, 0);
+
+      renderToDisplay();
+      updateBadges(workCanvas.width, workCanvas.height);
+      setBgStatus('✓ Background removed! Export as PNG to keep transparency, or pick a replacement color below.', 'ok');
+      document.getElementById('bg-restore-btn').style.display = 'inline-flex';
+      // Auto-switch format to PNG since result is transparent
+      document.getElementById('format-select').value = 'image/png';
+      hideOverlay();
+      setTimeout(() => { wrap.style.display = 'none'; }, 3000);
+      drawHistogram();
     };
+    img.onerror = () => { throw new Error('Failed to decode server result'); };
+    img.src = b64src;
 
-    // 4. CROP TOOL LOGIC
-    function startCrop() {
-        if (previewImg.style.display === 'none') return alert("Load an image first");
-        destroyCropper();
-        
-        // Cropper requires specific inline dimensions to work properly
-        previewImg.style.width = '100%';
-        previewImg.style.height = '100%';
-        
-        cropper = new Cropper(previewImg, {
-            viewMode: 1,
-            responsive: true,
-            autoCropArea: 0.8,
-            background: false
-        });
-        
-        document.getElementById('btn-crop').classList.add('hidden');
-        document.getElementById('btn-apply-crop').classList.remove('hidden');
-    }
+  } catch(e) {
+    setBgStatus('✗ ' + e.message, 'error');
+    hideOverlay();
+    wrap.style.display = 'none';
+    console.error('[BG Removal]', e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🪄 Remove Background';
+  }
+}
+window.removeBackground = removeBackground;
 
-    function applyCrop() {
-        if (!cropper) return;
-        const canvas = cropper.getCroppedCanvas();
-        const base64 = canvas.toDataURL('image/png');
-        
-        // Reset styles before updating preview
-        previewImg.style.width = '';
-        previewImg.style.height = '';
-        
-        updatePreview(base64); 
-        document.getElementById('btn-crop').classList.remove('hidden');
-        document.getElementById('btn-apply-crop').classList.add('hidden');
-    }
+function setBgStatus(msg, type) {
+  const box = document.getElementById('bg-status-box');
+  box.textContent = msg;
+  box.className = type;
+}
 
-    function destroyCropper() {
-        if (cropper) {
-            cropper.destroy();
-            cropper = null;
-            // Reset styles after destroying cropper
-            previewImg.style.width = '';
-            previewImg.style.height = '';
-            document.getElementById('btn-crop').classList.remove('hidden');
-            document.getElementById('btn-apply-crop').classList.add('hidden');
-        }
-    }
+function restoreOriginal() {
+  if (!origDataUrl) return;
+  bgRemovedDataUrl = null;
+  loadImageFromSrc(origDataUrl);
+  document.getElementById('bg-restore-btn').style.display = 'none';
+  setBgStatus('Original restored.', 'info');
+}
+window.restoreOriginal = restoreOriginal;
 
-    // 5. PRESET DIMENSION HANDLER
-    document.getElementById('preset-select').addEventListener('change', (e) => {
-        const isCustom = e.target.value === 'custom';
-        document.getElementById('custom-w').disabled = !isCustom;
-        document.getElementById('custom-h').disabled = !isCustom;
-    });
+function setBgColor(color) {
+  if (!origDataUrl) return;
+  const src = bgRemovedDataUrl || workCanvas.toDataURL('image/png');
+  const img = new Image();
+  img.onload = () => {
+    const tmp = document.createElement('canvas');
+    tmp.width = img.naturalWidth; tmp.height = img.naturalHeight;
+    const ctx = tmp.getContext('2d');
+    if (color !== 'transparent') { ctx.fillStyle = color; ctx.fillRect(0,0,tmp.width,tmp.height); }
+    ctx.drawImage(img, 0, 0);
+    workCanvas.width = tmp.width; workCanvas.height = tmp.height;
+    workCtx.drawImage(tmp, 0, 0);
+    renderToDisplay();
+  };
+  img.src = src;
+}
+window.setBgColor = setBgColor;
 
-    // 6. FINAL FORM SUBMISSION
-    document.getElementById('process-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        hiddenB64.value = previewImg.src;
-        
-        if (!hiddenB64.value) return alert("No image to process");
+function setBgImage(input) {
+  const file = input.files[0];
+  if (!file || !origDataUrl) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    const bgImg = new Image();
+    bgImg.onload = () => {
+      const src = bgRemovedDataUrl || workCanvas.toDataURL('image/png');
+      const fgImg = new Image();
+      fgImg.onload = () => {
+        const tmp = document.createElement('canvas');
+        tmp.width = fgImg.naturalWidth; tmp.height = fgImg.naturalHeight;
+        const ctx = tmp.getContext('2d');
+        ctx.drawImage(bgImg, 0, 0, tmp.width, tmp.height);
+        ctx.drawImage(fgImg, 0, 0);
+        workCanvas.width = tmp.width; workCanvas.height = tmp.height;
+        workCtx.drawImage(tmp, 0, 0);
+        renderToDisplay();
+      };
+      fgImg.src = src;
+    };
+    bgImg.src = ev.target.result;
+  };
+  r.readAsDataURL(file);
+}
+window.setBgImage = setBgImage;
 
-        const fd = new FormData(this);
-        submitBtn.innerText = "Processing...";
-        submitBtn.disabled = true;
+canvasEl.addEventListener('mousedown', e => {
+  drawing = true;
+});
 
-        fetch('/api/image/process', {
-            method: 'POST',
-            body: fd
-        }).then(res => {
-            if (!res.ok) throw new Error('Server processing failed');
-            return res.blob();
-        }).then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'processed_image.jpg'; a.click();
-            window.URL.revokeObjectURL(url);
-        }).catch(err => {
-            alert("Error: " + err.message);
-        }).finally(() => {
-            submitBtn.innerText = "🚀 Final Process & Download";
-            submitBtn.disabled = false;
-        });
-    });
+canvasEl.addEventListener('mouseup', () => drawing = false);
+
+canvasEl.addEventListener('mousemove', e => {
+  if (!drawing) return;
+
+  const rect = canvasEl.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (workCanvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (workCanvas.height / rect.height);
+
+  maskCtx.fillStyle = 'white';
+  maskCtx.beginPath();
+  maskCtx.arc(x, y, brushSize, 0, Math.PI * 2);
+  maskCtx.fill();
+
+  drawMaskOverlay();
+});
+
+function drawMaskOverlay() {
+  const ctx = canvasEl.getContext('2d');
+  ctx.drawImage(workCanvas, 0, 0);
+
+  ctx.globalAlpha = 0.4;
+  ctx.drawImage(maskCanvas, 0, 0);
+  ctx.globalAlpha = 1;
+}
+
+async function applyMagicRemove() {
+  const imgBlob = await new Promise(r => workCanvas.toBlob(r));
+  const maskBlob = await new Promise(r => maskCanvas.toBlob(r));
+
+  const fd = new FormData();
+  fd.append("image", imgBlob);
+  fd.append("mask", maskBlob);
+
+  const res = await fetch('/api/image/magic-remove', {
+    method: 'POST',
+    body: fd
+  });
+
+  const data = await res.json();
+  loadImageFromSrc(data.base64);
+}
+
+// ═══════════════════════════════════════════════
+// OVERLAY
+// ═══════════════════════════════════════════════
+function showOverlay(label, pct) {
+  overlay.classList.add('visible');
+  overlayLbl.textContent = label;
+  overlayPrg.style.width = (pct||0) + '%';
+  overlaySub.textContent = '';
+}
+function hideOverlay() { overlay.classList.remove('visible'); }
+
+// ═══════════════════════════════════════════════
+// ZOOM
+// ═══════════════════════════════════════════════
+function applyZoom() {
+  canvasEl.style.transform = `scale(${zoomLevel})`;
+  canvasEl.style.transformOrigin = 'center center';
+  document.getElementById('zoom-label').textContent = Math.round(zoomLevel*100) + '%';
+}
+function zoomIn()    { zoomLevel = Math.min(zoomLevel+.25, 5); applyZoom(); }
+function zoomOut()   { zoomLevel = Math.max(zoomLevel-.25, .1); applyZoom(); }
+function zoomFit()   { zoomLevel = 1; applyZoom(); }
+function zoomActual(){ if (!origDataUrl) return; zoomLevel = workCanvas.width / document.getElementById('preview-area').clientWidth; applyZoom(); }
+window.zoomIn=zoomIn; window.zoomOut=zoomOut; window.zoomFit=zoomFit; window.zoomActual=zoomActual;
+
+// ═══════════════════════════════════════════════
+// HISTOGRAM
+// ═══════════════════════════════════════════════
+function drawHistogram() {
+  const wrap = document.getElementById('histogram-wrap');
+  if (!origDataUrl) { wrap.style.display='none'; return; }
+  wrap.style.display = 'block';
+  const hc = document.getElementById('histogram-canvas');
+  const hctx = hc.getContext('2d');
+  hc.width = hc.offsetWidth || 500;
+  const data = workCtx.getImageData(0,0,workCanvas.width,workCanvas.height).data;
+  const R=new Uint32Array(256), G=new Uint32Array(256), B=new Uint32Array(256);
+  for (let i=0;i<data.length;i+=4){R[data[i]]++;G[data[i+1]]++;B[data[i+2]]++;}
+  const mx = Math.max(...R,...G,...B) || 1;
+  const W=hc.width, H=48;
+  hctx.clearRect(0,0,W,H);
+  [[R,'rgba(239,68,68,.55)'],[G,'rgba(34,197,94,.55)'],[B,'rgba(59,130,246,.55)']].forEach(([ch,color])=>{
+    hctx.beginPath(); hctx.moveTo(0,H);
+    for(let i=0;i<256;i++){ const x=(i/255)*W, y=H-(ch[i]/mx)*H; i===0?hctx.moveTo(x,H):void 0; hctx.lineTo(x,y); }
+    hctx.lineTo(W,H); hctx.closePath();
+    hctx.fillStyle=color; hctx.fill();
+  });
+}
+
+// ═══════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════
+function toggleCustomSize() {
+  document.getElementById('custom-size-row').style.display =
+    document.getElementById('preset-select').value === 'custom' ? 'grid' : 'none';
+}
+window.toggleCustomSize = toggleCustomSize;
+
+function downloadImage() {
+  if (!origDataUrl) return;
+  const format  = document.getElementById('format-select').value;
+  const quality = parseFloat(document.getElementById('quality-select').value);
+  const preset  = document.getElementById('preset-select').value;
+  const ext = {'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[format]||'jpg';
+
+  let tW = workCanvas.width, tH = workCanvas.height;
+  if (preset !== 'original' && preset !== 'custom') {
+    [tW, tH] = preset.split(',').map(Number);
+  } else if (preset === 'custom') {
+    const cw = parseInt(document.getElementById('custom-w').value);
+    const ch = parseInt(document.getElementById('custom-h').value);
+    if (cw>0 && ch>0) { tW=cw; tH=ch; }
+  }
+
+  const exp = document.createElement('canvas');
+  exp.width=tW; exp.height=tH;
+  const ctx = exp.getContext('2d');
+  ctx.filter = buildFilter();
+  ctx.drawImage(workCanvas, 0, 0, tW, tH);
+  ctx.filter = 'none';
+
+  const a = document.createElement('a');
+  a.href = exp.toDataURL(format, quality);
+  a.download = `studio_export.${ext}`;
+  a.click();
+}
+window.downloadImage = downloadImage;
+
+// ═══════════════════════════════════════════════
+// RESET
+// ═══════════════════════════════════════════════
+function resetAll() {
+  origDataUrl = null; bgRemovedDataUrl = null;
+  activeFilter = 'none'; zoomLevel = 1;
+  workCanvas = document.createElement('canvas');
+  workCtx    = workCanvas.getContext('2d');
+
+  canvasEl.style.display = 'none'; canvasEl.style.filter = 'none'; canvasEl.style.transform = '';
+  mainImg.style.display  = 'none';
+  placeholder.style.display='flex'; placeholder.style.flexDirection='column'; placeholder.style.alignItems='center';
+
+  setDownloadEnabled(false);
+  resetSliders();
+  destroyCropper();
+
+  ['img-info','canvas-size-badge'].forEach(id => document.getElementById(id).style.display='none');
+  document.getElementById('zoom-label').textContent = '—';
+  document.getElementById('file-input').value = '';
+  document.getElementById('url-input').value  = '';
+  document.getElementById('url-status').style.display = 'none';
+  document.getElementById('bg-restore-btn').style.display = 'none';
+  document.getElementById('histogram-wrap').style.display = 'none';
+  document.getElementById('bg-progress-wrap').style.display = 'none';
+  setBgStatus('🤖 AI Background Removal — Powered by u2net on the server. Secure, fast, no storage.', 'info');
+  hideOverlay();
+}
+window.resetAll = resetAll;
+
+// ═══════════════════════════════════════════════
+// TAB SWITCH
+// ═══════════════════════════════════════════════
+function switchTab(btn, tabId) {
+  document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+window.switchTab = switchTab;
+
+// (BG lib loaded on-demand via window._loadBgLib — no event listener needed)
 </script>
+
 {% endblock %}

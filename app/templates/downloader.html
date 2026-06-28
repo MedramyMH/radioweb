@@ -4,13 +4,25 @@
 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
     
     <!-- Main Editor Workspace -->
-    <div class="lg:col-span-3 space-y-6">
+    <div class="lg:col-span-3 space-y-6 ">
         
         <!-- Step 1: Load Video -->
-        <div class="bg-slate-800 p-6 rounded-xl">
-            <h3 class="text-xl font-bold mb-4">1. Load Video Source</h3>
+        <div class="bg-slate-100 text-slate-800 
+            p-6 rounded-xl space-y-4 
+            border border-slate-300 
+            dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600">
+
+            <h3 class="text-xl font-bold mb-4">Load Video Source</h3>
             <div class="flex gap-4">
-                <input type="text" id="source-url" placeholder="Paste YouTube / TikTok URL here..." class="flex-1 bg-slate-900 p-3 rounded border border-slate-600">
+                <input 
+                type="text" 
+                id="source-url" 
+                placeholder="Paste YouTube / TikTok URL here..." 
+                class="flex-1 p-3 rounded border 
+                        bg-slate-100 text-slate-800 border-slate-300 
+                        dark:bg-slate-900 dark:text-slate-100 dark:border-slate-600
+                        focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
                 <button onclick="loadFromUrl()" id="btn-load-url" class="bg-blue-600 px-6 py-3 rounded font-bold hover:bg-blue-700">Load URL</button>
                 <div class="relative">
                     <input type="file" id="source-file" accept="video/*" class="hidden" onchange="loadFromFile()">
@@ -23,7 +35,7 @@
         <!-- Step 2: Editor (Hidden until video loads) -->
         <div id="editor-workspace" class="hidden space-y-6">
             <!-- Preview Area -->
-            <div class="bg-slate-800 p-4 rounded-xl flex items-center gap-6">
+            <div class="bg-slate-800 p-4 rounded-xl flex items-center gap-6 ">
                 <img id="video-thumbnail" src="" class="w-64 h-36 object-cover rounded bg-slate-900">
                 <div>
                     <h4 class="font-bold text-lg mb-2">Video Preview</h4>

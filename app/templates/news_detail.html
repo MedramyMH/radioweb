@@ -10,7 +10,11 @@
                 <span class="text-xs text-blue-400 bg-blue-400/10 px-2 py-1 rounded">{{ article.category }}</span>
             </div>
             
-            <h1 class="text-4xl font-extrabold text-white mb-6 leading-tight">{{ article.title }}</h1>
+            <h1
+                dir="auto"
+                class="text-4xl font-extrabold text-white mb-6 leading-tight">
+                {{ article.title }}
+            </h1>
             
             {% if article.image_url %}
                 <img src="{{ article.image_url }}" class="w-full rounded-xl mb-6 shadow-lg">
@@ -24,7 +28,15 @@
 
             <!-- ARTICLE BODY -->
             <!-- whitespace-pre-wrap is the magic class that fixes spacing/fonts -->
-            <div class="text-gray-300 leading-relaxed mb-8 text-lg whitespace-pre-wrap break-words [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:text-xl [&_h3]:font-bold [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l-4 [&_blockquote]:border-blue-500 [&_blockquote]:pl-4 [&_blockquote]:italic [&_img]:rounded-lg [&_img]:my-4">
+            <div
+                dir="auto"
+                class="article-content text-gray-300 leading-relaxed mb-8 text-lg break-words
+                [&_h1]:text-3xl [&_h1]:font-bold
+                [&_h2]:text-2xl [&_h2]:font-bold
+                [&_h3]:text-xl [&_h3]:font-bold
+                [&_p]:mb-4
+                [&_img]:rounded-lg
+                [&_img]:my-4">
                 {{ article.content | safe }}
             </div>
 

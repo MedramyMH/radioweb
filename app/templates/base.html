@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}TunisiaHub{% endblock %}</title>
+
+    <!-- FIX: Dark mode script MUST be in <head> BEFORE Tailwind to prevent white flash -->
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark' || (!saved && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -11,154 +25,187 @@
             theme: { extend: {} }
         }
     </script>
+    <style>
+        /* Smooth theme transitions — color only, not layout */
+        body, aside, nav a, button, input, select, div {
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+        }
+    </style>
 </head>
-<body class="bg-white text-black dark:bg-gray-900 dark:text-white flex h-screen overflow-hidden">
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white flex h-screen overflow-hidden">
 
-    <aside class="w-64 bg-gray-200 dark:bg-gray-800 flex flex-col justify-between p-4 flex-shrink-0 z-40">
+    <aside class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col justify-between p-4 flex-shrink-0 z-40 shadow-sm">
         <div>
-            <h1 class="text-2xl font-bold mb-10 text-blue-400">🇹🇳 TunisiaHub</h1>
-            <nav class="space-y-2">
-                <!-- data-nav triggers AJAX loading -->
-                <a href="/" data-nav class="nav-link block p-2 rounded transition hover:bg-gray-700">🏠 Home</a>
-                <a href="/radio" data-nav class="nav-link block p-2 rounded transition hover:bg-gray-700">📻 Radio</a>
-                <a href="/news" data-nav class="nav-link block p-2 rounded transition hover:bg-gray-700">📰 News</a>
-                <a href="/downloader" data-nav class="nav-link block p-2 rounded transition hover:bg-gray-700">⬇️ Downloader</a>
-                <a href="/transcription" data-nav class="nav-link block p-2 rounded transition hover:bg-gray-700">🎙️ Transcription</a>
-                <a href="/image-tools" data-nav class="block p-2 rounded transition hover:bg-gray-700">🖼️ Image Tools</a>
-                
+            <h1 class="text-2xl font-bold mb-10 text-blue-600 dark:text-blue-400">🇹🇳 TunisiaHub</h1>
+            <nav class="space-y-1">
+                <a href="/" data-nav class="nav-link flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">Home</a>
+                <a href="/radio" data-nav class="nav-link flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">Radio</a>
+                <a href="/news" data-nav class="nav-link flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">Articles</a>
+                <a href="/downloader" data-nav class="nav-link flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">Telecharger</a>
+                <a href="/transcription" data-nav class="nav-link flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">Transcription</a>
+                <a href="/image-tools" data-nav class="nav-link flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">Image outils</a>
                 {% if request.state.user and request.state.user.is_admin %}
-                    <a href="/admin" class="block p-2 rounded transition text-yellow-400 hover:bg-gray-700">⚙️ Admin Panel</a>
+                    <a href="/admin" class="flex items-center gap-3 p-2 rounded-lg transition-colors text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20">Admin Panel</a>
                 {% endif %}
             </nav>
         </div>
-        <div class="bg-gray-200 dark:bg-gray-800 p-2 text-center border-b border-gray-300 dark:border-gray-700">
-            <button onclick="toggleDarkMode()" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700">🌓</button>
 
-            {% if request.state.user %}
-                <p class="mb-2">👤 {{ request.state.user.username }}</p>
-                <!-- NO data-nav! Force real page unload for logout to clear JS properly -->
-                <a href="/auth/logout" class="text-red-400 hover:underline text-xs">Logout</a>
-            {% else %}
-                <a href="/auth/login" data-nav class="text-blue-400 hover:underline block mb-2">Login</a>
-                <a href="/auth/register" data-nav class="text-gray-400 hover:underline text-xs">Create Account</a>
-            {% endif %}
+        <div class="space-y-3">
+            <!-- Dark/Light mode toggle with visual switch -->
+            <button id="theme-toggle" onclick="toggleDarkMode()"
+                class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <span id="theme-label">Light Mode</span>
+                <span class="w-9 h-5 bg-gray-300 dark:bg-blue-500 rounded-full relative flex items-center" style="transition: background-color 0.3s;">
+                    <span id="theme-dot" class="absolute w-4 h-4 bg-white rounded-full shadow" style="left: 2px; transition: left 0.3s;"></span>
+                </span>
+            </button>
+
+            <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
+                {% if request.state.user %}
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Signed in as</p>
+                    <p class="font-semibold text-sm mb-2 text-gray-800 dark:text-gray-200">{{ request.state.user.username }}</p>
+                    <a href="/auth/logout" class="text-red-500 hover:text-red-600 dark:text-red-400 text-xs hover:underline">Logout</a>
+                {% else %}
+                    <a href="/auth/login" data-nav class="block w-full text-center py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium mb-2">Login</a>
+                    <a href="/auth/register" data-nav class="block text-center text-gray-500 dark:text-gray-400 hover:underline text-xs">Create Account</a>
+                {% endif %}
+            </div>
         </div>
     </aside>
 
     <div class="flex-1 flex flex-col overflow-hidden">
-        <div class="bg-gray-800 p-2 text-center border-b border-gray-700 flex-shrink-0">
+        <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-2 text-center text-xs text-gray-400 flex-shrink-0">
             AdSense Placeholder
         </div>
 
-        <!-- ONLY THIS SECTION CHANGES -->
-        <div id="app-content" class="flex-1 overflow-y-auto p-8 pb-28">
+        <div id="app-content" class="flex-1 overflow-y-auto p-8 pb-28 bg-gray-50 dark:bg-gray-900">
             {% block content %}{% endblock %}
         </div>
 
-        <!-- PERSISTENT AUDIO PLAYER (Literally never destroyed by navigation) -->
-        <div id="global-player" class="fixed bottom-0 left-64 right-0 bg-gray-950 border-t border-gray-800 p-3 z-50 transform translate-y-full transition-transform duration-300">
+        <!-- Persistent audio player -->
+        <div id="global-player" class="fixed bottom-0 left-64 right-0 bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 p-3 z-50 transform translate-y-full transition-transform duration-300 shadow-2xl">
             <div class="flex items-center gap-4 max-w-7xl mx-auto">
-                <img id="player-img" src="" class="w-12 h-12 rounded bg-gray-800 hidden">
+                <img id="player-img" src="" class="w-12 h-12 rounded-lg bg-gray-200 dark:bg-gray-800 hidden object-cover">
                 <div class="flex-1 min-w-0">
-                    <p id="player-title" class="font-bold text-sm truncate">No station playing</p>
+                    <p id="player-title" class="font-bold text-sm truncate text-gray-900 dark:text-white">No station playing</p>
                 </div>
-                <audio id="global-audio" controls class="w-96 h-10" style="filter: invert(1) hue-rotate(180deg);"></audio>
+                <audio id="global-audio" controls class="w-96 h-10"></audio>
             </div>
         </div>
     </div>
 
     <script>
+        // =====================================================
+        // DARK MODE — no-flash, toggle with visual dot
+        // =====================================================
+        function updateToggleUI() {
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('theme-label').textContent = isDark ? 'Dark Mode' : 'Light Mode';
+            const dot = document.getElementById('theme-dot');
+            dot.style.left = isDark ? '19px' : '2px';
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateToggleUI();
+        }
+
+        // Set initial toggle visual state (already applied in <head>)
+        // Use requestAnimationFrame so the DOM is ready and transitions don't fire on load
+        requestAnimationFrame(() => { requestAnimationFrame(updateToggleUI); });
+
+        // =====================================================
+        // AJAX NAVIGATION — with module script + link support
+        // =====================================================
+        const appContent = document.getElementById('app-content');
         const audio = document.getElementById('global-audio');
         const player = document.getElementById('global-player');
-        const appContent = document.getElementById('app-content');
 
-        // 1. INTERCEPT LINK CLICKS
         document.addEventListener('click', async (e) => {
             const link = e.target.closest('a[data-nav]');
             if (!link) return;
-            
             e.preventDefault();
             const url = link.href;
-            
-            // UI Update
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('bg-blue-600/20', 'text-blue-400'));
-            link.classList.add('bg-blue-600/20', 'text-blue-400');
-            
+
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('bg-blue-50', 'dark:bg-blue-900', 'text-blue-600'));
+            link.classList.add('bg-blue-50', 'text-blue-600');
+
             try {
-                // redirect: 'manual' prevents fetch from following 303 redirects automatically
                 const res = await fetch(url, { redirect: 'manual' });
-                
-                // If it's a redirect (like admin guard or login), force real page load
                 if (res.status === 0 || (res.status >= 300 && res.status < 400)) {
                     window.location.href = res.headers.get('Location') || url;
                     return;
                 }
-                
                 if (!res.ok) throw new Error('Network error');
                 const html = await res.text();
-                
-                // Inject new page content
+
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 const newContent = doc.querySelector('#app-content');
-                
+
                 if (newContent) {
                     appContent.innerHTML = newContent.innerHTML;
-                    // Re-run scripts (for downloader/transcription)
-                    newContent.querySelectorAll('script').forEach(oldScript => {
-                        const newScript = document.createElement('script');
-                        newScript.textContent = oldScript.textContent;
-                        appContent.appendChild(newScript);
+
+                    // Inject link tags (CSS libraries like Cropper)
+                    newContent.querySelectorAll('link[rel="stylesheet"]').forEach(oldLink => {
+                        if (!document.querySelector(`link[href="${oldLink.href}"]`)) {
+                            const l = document.createElement('link');
+                            l.rel = 'stylesheet';
+                            l.href = oldLink.href;
+                            document.head.appendChild(l);
+                        }
                     });
+
+                    // Re-run scripts — handles classic, module, and external src scripts
+                    const scripts = [...newContent.querySelectorAll('script')];
+                    const runNext = (i) => {
+                        if (i >= scripts.length) return;
+                        const old = scripts[i];
+                        const s = document.createElement('script');
+                        if (old.type) s.type = old.type;
+                        if (old.src) {
+                            s.src = old.src;
+                            s.async = false;
+                            s.onload = () => runNext(i + 1);
+                            s.onerror = () => runNext(i + 1);
+                            appContent.appendChild(s);
+                        } else {
+                            s.textContent = old.textContent;
+                            appContent.appendChild(s);
+                            runNext(i + 1);
+                        }
+                    };
+                    runNext(0);
                 }
-                
+
                 history.pushState({}, '', url);
                 appContent.scrollTop = 0;
             } catch (err) {
-                window.location.href = url; // Fallback
+                window.location.href = url;
             }
         });
 
-        // Handle Back/Forward buttons smoothly
         window.addEventListener('popstate', async () => {
-            const res = await fetch(window.location.href);
-            const html = await res.text();
-            const doc = new DOMParser().parseFromString(html, 'text/html');
-            const newContent = doc.querySelector('#app-content');
-            if (newContent) appContent.innerHTML = newContent.innerHTML;
+            try {
+                const res = await fetch(window.location.href);
+                const html = await res.text();
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const newContent = doc.querySelector('#app-content');
+                if (newContent) appContent.innerHTML = newContent.innerHTML;
+            } catch { window.location.reload(); }
         });
 
-        // 2. GLOBAL RADIO FUNCTION
+        // =====================================================
+        // GLOBAL RADIO PLAYER
+        // =====================================================
         function playGlobalRadio(url, name, favicon) {
-            if (audio.src !== url) {
-                audio.src = url;
-                audio.play();
-            }
+            if (audio.src !== url) { audio.src = url; audio.play(); }
             document.getElementById('player-title').innerText = name;
             const img = document.getElementById('player-img');
-            img.src = favicon || '';
-            img.classList.remove('hidden');
-            player.classList.remove('translate-y-full'); // Slide up
+            if (favicon) { img.src = favicon; img.classList.remove('hidden'); }
+            player.classList.remove('translate-y-full');
         }
-
-        // 3. DARK MODE TOGGLE
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-        }
-        // On page load, apply saved theme
-        
-        (function() {
-            const savedTheme = localStorage.getItem('theme');
-            if (
-                savedTheme === 'dark' ||
-                (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
-            ) {
-                document.documentElement.classList.add('dark');
-            }
-        })();
-
-        
     </script>
 </body>
 </html>

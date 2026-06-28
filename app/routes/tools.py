@@ -1,17 +1,26 @@
 import io
 import base64
 import httpx
-from fastapi import APIRouter, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, Response
+from fastapi import APIRouter, Request, Form, HTTPException, UploadFile, File
+from fastapi.responses import HTMLResponse, Response, JSONResponse
 from fastapi.templating import Jinja2Templates
 from app.services.image_service import process_base64_image
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
-@router.get("/image-tools", response_class=HTMLResponse)
-async def image_tools_page(request: Request):
-    return templates.TemplateResponse("tools_image.html", {"request": request})
+# ── Lazy rembg session (loads model on first request) ──────────────────
+_rembg_session = None
+
+def _get_rembg_session():
+    global _rembg_session
+    if _rembg_session is None:
+        try:
+            from rembg import new_session
+            _rembg_session = new_session("u2net")
+        except Exception as e:
+            raise RuntimeError(f"Could not load rembg model: {e}")
+    return _rembg_session
 
 # NEW: Safe URL Proxy to bypass CORS
 @router.get("/api/image/fetch-url")
@@ -65,3 +74,65 @@ async def api_process_image(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/image-tools", response_class=HTMLResponse)
+async def image_tools_page(request: Request):
+    return templates.TemplateResponse("tools_image.html", {"request": request})
+
+
+@router.post("/api/image/remove-bg")
+async def remove_background(
+    file: UploadFile = File(...),
+    model: str = Form("u2net"),
+    alpha_matting: bool = Form(True)
+):
+    try:
+        from rembg import remove, new_session
+        from PIL import Image
+
+        contents = await file.read()
+        input_img = Image.open(io.BytesIO(contents)).convert("RGBA")
+
+        session = new_session(model)
+
+        output_img = remove(
+            input_img,
+            session=session,
+            alpha_matting=alpha_matting,
+            alpha_matting_foreground_threshold=240,
+            alpha_matting_background_threshold=10,
+            alpha_matting_erode_size=10
+        )
+
+        buf = io.BytesIO()
+        output_img.save(buf, format="PNG")
+        buf.seek(0)
+
+        b64 = base64.b64encode(buf.read()).decode()
+        return {"base64": f"data:image/png;base64,{b64}"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.post("/api/image/magic-remove")
+async def magic_remove(
+    image: UploadFile = File(...),
+    mask: UploadFile = File(...)
+):
+    from PIL import Image
+
+    img = Image.open(io.BytesIO(await image.read())).convert("RGBA")
+    msk = Image.open(io.BytesIO(await mask.read())).convert("L")
+
+    # Invert mask → white = remove
+    msk = msk.point(lambda p: 255 - p)
+
+    img.putalpha(msk)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+
+    b64 = base64.b64encode(buf.read()).decode()
+    return {"base64": f"data:image/png;base64,{b64}"}

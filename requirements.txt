@@ -17,3 +17,5 @@ aiofiles
 psycopg2
 aiosqlite
 Pillow
+rembg
+onnxruntime
