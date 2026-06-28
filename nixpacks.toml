@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["ffmpeg", "deno"]
+nixPkgs = ["...", "ffmpeg", "deno"]
 
 [phases.install]
 cmds = ["pip3 install -r requirements.txt"]
