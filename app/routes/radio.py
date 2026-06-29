@@ -22,7 +22,7 @@ async def radio_page(request: Request, q: str = None, show_favs: bool = False, d
     else:
         stations = await radio_service.search_radios(q) if q else await radio_service.get_tunisian_radios()
         
-    return templates.TemplateResponse(request, "radio.html", {
+    return templates.TemplateResponse("radio.html", {
         "request": request, "stations": stations, "user": user, "show_favs": show_favs
     })
 
