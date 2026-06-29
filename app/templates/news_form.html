@@ -1,147 +1,113 @@
 {% extends "base.html" %}
 {% block title %}Create News - TunisiaHub{% endblock %}
-
 {% block content %}
 
-<h2 class="text-3xl font-bold mb-6">Create Article</h2>
+<h2 class="text-2xl sm:text-3xl font-bold mb-6">Create Article</h2>
 
-<form action="/admin/news/create" method="POST" class="bg-gray-800 p-6 rounded-xl space-y-4 max-w-4xl">
+<form action="/admin/news/create" method="POST"
+      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
+             p-4 sm:p-6 rounded-xl space-y-4 max-w-4xl mb-32">
 
     <input
         type="text"
         name="title"
         placeholder="Article Title"
         required
-        class="w-full bg-gray-900 p-3 rounded border border-gray-700">
+        class="w-full bg-gray-50 dark:bg-gray-900 p-3 rounded border
+               border-gray-200 dark:border-gray-700
+               text-gray-900 dark:text-white text-sm sm:text-base">
 
     <select
         name="category"
-        class="w-full bg-gray-900 p-3 rounded border border-gray-700">
-
+        class="w-full bg-gray-50 dark:bg-gray-900 p-3 rounded border
+               border-gray-200 dark:border-gray-700
+               text-gray-900 dark:text-white text-sm sm:text-base">
         <option value="Politics">Politics</option>
         <option value="Economy">Economy</option>
         <option value="Tech">Tech</option>
         <option value="Sports">Sports</option>
-
+        <option value="Religion">Religion</option>
+        <option value="Culture">Culture</option>
+        <option value="Health">Health</option>
+        <option value="Education">Education</option>
     </select>
 
+    <!-- TinyMCE target — shorter on mobile via CSS -->
     <textarea
         id="editor"
         name="content"
         dir="rtl"
-        class="w-full h-96 bg-gray-900 p-3 rounded border border-gray-700">
+        class="w-full bg-gray-50 dark:bg-gray-900 p-3 rounded border
+               border-gray-200 dark:border-gray-700 text-sm"
+        style="height: clamp(200px, 50vh, 384px);">
     </textarea>
 
     <input
         type="text"
         name="meta_description"
         placeholder="SEO Meta Description"
-        class="w-full bg-gray-900 p-3 rounded border border-gray-700">
+        class="w-full bg-gray-50 dark:bg-gray-900 p-3 rounded border
+               border-gray-200 dark:border-gray-700
+               text-gray-900 dark:text-white text-sm sm:text-base">
 
-    <label class="flex items-center gap-2">
+    <label class="flex items-center gap-2 cursor-pointer">
         <input type="checkbox" name="is_featured" class="w-5 h-5">
-        <span>Featured Article</span>
+        <span class="text-sm text-gray-700 dark:text-gray-300">Featured Article</span>
     </label>
 
     <button
         type="submit"
-        class="bg-green-600 px-6 py-3 rounded font-bold hover:bg-green-700">
+        class="w-full sm:w-auto bg-green-600 px-8 py-3 rounded-lg font-bold
+               hover:bg-green-700 active:scale-95 transition-transform text-white text-sm sm:text-base">
         Publish
     </button>
-
 </form>
 
-<!-- TinyMCE -->
 <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-
 <script>
 tinymce.init({
-
     selector: "#editor",
-
-    height: 600,
-
-    menubar: true,
-
-    plugins: [
-        "lists",
-        "link",
-        "image",
-        "code",
-        "table",
-        "directionality",
-        "autolink"
-    ],
-
-    toolbar:
-        "undo redo | " +
-        "blocks | " +
-        "bold italic underline | " +
-        "alignleft aligncenter alignright alignjustify | " +
-        "ltr rtl | " +
-        "bullist numlist | " +
-        "link image table | " +
-        "removeformat code",
-
+    // Shorter toolbar on mobile — detected via window width
+    height: window.innerWidth < 640 ? 300 : 600,
+    menubar: window.innerWidth >= 640,
+    plugins: ["lists", "link", "image", "code", "table", "directionality", "autolink"],
+    toolbar: window.innerWidth < 640
+        ? "bold italic | alignleft alignright | ltr rtl | bullist numlist | link"
+        : "undo redo | blocks | bold italic underline | alignleft aligncenter alignright alignjustify | ltr rtl | bullist numlist | link image table | removeformat code",
     directionality: "rtl",
-
     content_style: `
-        body{
+        body {
             direction: rtl;
-            text-align:right;
-            font-family:Tahoma, Arial, sans-serif;
-            font-size:16px;
-            line-height:1.9;
-            padding:15px;
+            text-align: right;
+            font-family: Tahoma, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.9;
+            padding: 15px;
         }
-
-        p,h1,h2,h3,h4,h5,h6,ul,ol{
-            direction:rtl;
-            text-align:right;
-        }
+        p,h1,h2,h3,h4,h5,h6,ul,ol { direction: rtl; text-align: right; }
     `,
-
     setup: function(editor) {
-
-        editor.on("init", function () {
-                editor.getBody().dir = "auto";
-            });
-
-        editor.on("keyup", function () {
-
-            const text = editor.getContent({format:"text"}).trim();
-
+        editor.on("init", function() {
+            editor.getBody().dir = "auto";
+        });
+        editor.on("keyup", function() {
+            const text = editor.getContent({ format: "text" }).trim();
             if (/[\u0600-\u06FF]/.test(text)) {
-
                 editor.getBody().dir = "rtl";
                 editor.getBody().style.textAlign = "right";
-
             } else {
-
                 editor.getBody().dir = "ltr";
                 editor.getBody().style.textAlign = "left";
-
             }
-
         });
-
     },
-
     images_upload_handler: (blobInfo) => {
-
         return new Promise((resolve) => {
-
             const reader = new FileReader();
-
             reader.onload = () => resolve(reader.result);
-
             reader.readAsDataURL(blobInfo.blob());
-
         });
-
     }
-
 });
 </script>
-
 {% endblock %}
