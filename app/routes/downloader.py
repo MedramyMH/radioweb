@@ -16,7 +16,7 @@ def cleanup_file(path: str):
 async def downloader_page(request: Request):
     from fastapi.templating import Jinja2Templates
     templates = Jinja2Templates(directory="app/templates")
-    return templates.TemplateResponse("downloader.html", {"request": request})
+    return templates.TemplateResponse(request, "downloader.html", {"request": request})
 
 @router.post("/api/editor/load")
 async def load_video_to_editor(
