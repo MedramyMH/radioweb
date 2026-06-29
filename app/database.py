@@ -2,7 +2,7 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
-DATABASE_URL =postgresql+asyncpg://neondb_owner:npg_Ds7GeOJ2lruU@ep-still-fire-an80qqz5-pooler.c-6.us-east-1.aws.neon.tech/neondb?ssl=require
+DATABASE_URL ="postgresql+asyncpg://neondb_owner:npg_Ds7GeOJ2lruU@ep-still-fire-an80qqz5-pooler.c-6.us-east-1.aws.neon.tech/neondb?ssl=require"
 
 engine = create_async_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 async_session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
