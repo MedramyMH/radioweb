@@ -38,6 +38,7 @@
     --badge-text: #94a3b8;
   }
 
+  /* ── Desktop: side-by-side grid ── */
   #studio-shell {
     display: grid;
     grid-template-columns: 285px 1fr;
@@ -49,6 +50,37 @@
     margin: 0 auto;
   }
 
+  /* ── Mobile: single column, no fixed height ── */
+  @media (max-width: 767px) {
+    #studio-shell {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
+      height: auto;
+      min-height: unset;
+      padding-bottom: 80px; /* clear bottom nav */
+    }
+    #studio-sidebar {
+      border-right: none !important;
+      border-bottom: 1px solid var(--panel-border);
+      max-height: none !important;
+      overflow-y: visible !important;
+    }
+    /* Canvas area below sidebar on mobile */
+    #studio-canvas-area {
+      order: -1; /* preview first on mobile */
+    }
+    #preview-area {
+      min-height: 260px !important;
+    }
+    /* Sidebar tools toggled by accordion on mobile */
+    #sidebar-tools-body {
+      display: none;
+    }
+    #sidebar-tools-body.open {
+      display: block;
+    }
+  }
+
   #studio-header {
     grid-column: 1 / -1;
     display: flex;
@@ -56,7 +88,8 @@
     justify-content: space-between;
     padding-bottom: 14px;
     border-bottom: 1px solid var(--panel-border);
-    margin-bottom: 0;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   #studio-sidebar {
@@ -125,6 +158,7 @@
     white-space: nowrap;
     line-height: 1.2;
   }
+  .btn:active:not(:disabled) { transform: scale(0.97); }
   .btn:disabled { opacity: 0.38; cursor: not-allowed; }
   .btn-primary  { background: #3b82f6; color: #fff; }
   .btn-primary:hover:not(:disabled)  { background: #2563eb; }
@@ -163,7 +197,8 @@
     position: relative;
   }
   .icon-btn .ico { font-size: 19px; line-height: 1; }
-  .icon-btn:hover { background: var(--tool-btn-hover); transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,.1); }
+  .icon-btn:hover { background: var(--tool-btn-hover); }
+  .icon-btn:active { transform: scale(0.96); }
   .icon-btn.active { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
   .dark .icon-btn.active { background: #1e3a5f; color: #60a5fa; }
 
@@ -173,7 +208,7 @@
   .slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
   .slider-label { font-size: 11.5px; font-weight: 500; color: var(--adjust-label); width: 74px; flex-shrink: 0; }
   .slider-val { font-size: 11px; font-weight: 700; color: #3b82f6; width: 30px; text-align: right; flex-shrink: 0; }
-  input[type=range] { flex: 1; accent-color: #3b82f6; cursor: pointer; }
+  input[type=range] { flex: 1; accent-color: #3b82f6; cursor: pointer; height: 20px; } /* taller touch target */
 
   #preview-area {
     flex: 1;
@@ -222,16 +257,38 @@
   @keyframes spin { to { transform:rotate(360deg); } }
 
   .swatch { width:20px; height:20px; border-radius:50%; border:1.5px solid var(--panel-border); display:inline-block; flex-shrink:0; }
-
   .badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:600; background:var(--badge-bg); color:var(--badge-text); }
 
   [data-tip] { position: relative; }
+  /* Hide tooltips on touch devices */
+  @media (hover: none) { [data-tip]::after { display: none; } }
   [data-tip]::after { content:attr(data-tip); position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); background:#1e293b; color:#f1f5f9; font-size:11px; padding:3px 8px; border-radius:5px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity 0.15s; z-index:200; }
   [data-tip]:hover::after { opacity:1; }
 
   #drop-zone { border:2px dashed var(--input-border); border-radius:10px; padding:16px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative; }
   #drop-zone:hover, #drop-zone.dragover { border-color:#3b82f6; background:rgba(59,130,246,.05); }
   #drop-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+
+  /* Mobile tools toggle button */
+  #tools-toggle {
+    display: none;
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--tool-btn-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    color: var(--tool-btn-text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  @media (max-width: 767px) {
+    #tools-toggle { display: flex; }
+  }
 </style>
 
 <div id="studio-shell">
@@ -239,179 +296,198 @@
   <!-- HEADER -->
   <div id="studio-header">
     <div>
-      <h2 style="font-size:19px;font-weight:700;color:var(--input-text);margin:0;">🖼 Image Studio</h2>
-      <p style="font-size:12px;color:var(--section-label);margin:2px 0 0;">Crop · Adjust · Filters · AI Background Removal · Export</p>
+      <h2 style="font-size:17px;font-weight:700;color:var(--input-text);margin:0;">🖼 Image Studio</h2>
+      <p style="font-size:11px;color:var(--section-label);margin:2px 0 0;">Crop · Adjust · Filters · AI BG Removal · Export</p>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <span id="img-info" class="badge" style="display:none;"></span>
-      <button class="btn btn-ghost btn-sm" onclick="resetAll()" data-tip="Clear and start over">🗑 Reset</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetAll()">🗑 Reset</button>
       <button id="download-btn" class="btn btn-success" onclick="downloadImage()" disabled>⬇️ Download</button>
+    </div>
+  </div>
+
+  <!-- CANVAS AREA (rendered first on mobile via CSS order) -->
+  <div id="studio-canvas-area">
+
+    <!-- Zoom toolbar: scrollable on mobile -->
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;overflow-x:auto;">
+      <div style="display:flex;gap:5px;flex-shrink:0;">
+        <button class="btn btn-ghost btn-sm" onclick="zoomIn()"     data-tip="Zoom in">🔍+</button>
+        <button class="btn btn-ghost btn-sm" onclick="zoomOut()"    data-tip="Zoom out">🔍−</button>
+        <button class="btn btn-ghost btn-sm" onclick="zoomFit()"    data-tip="Fit to view">⊡ Fit</button>
+        <button class="btn btn-ghost btn-sm" onclick="zoomActual()" data-tip="100%">1:1</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <span id="zoom-label" style="font-size:11px;color:var(--section-label);">—</span>
+        <span class="badge" id="canvas-size-badge" style="display:none;"></span>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div id="preview-area">
+      <div id="placeholder" style="text-align:center;color:var(--section-label);pointer-events:none;padding:20px;">
+        <div style="font-size:48px;margin-bottom:10px;line-height:1;">🖼️</div>
+        <p style="font-size:13px;font-weight:600;color:var(--input-text);">Drop an image or use the panel below</p>
+        <p style="font-size:11px;margin-top:4px;">JPG · PNG · WebP · GIF</p>
+      </div>
+      <img id="main-img" alt="Preview">
+      <canvas id="canvas-el"></canvas>
+      <div id="canvas-overlay">
+        <div class="spinner"></div>
+        <p id="overlay-label" style="font-size:13px;font-weight:600;">Processing…</p>
+        <div style="width:200px;" class="progress-bar">
+          <div class="progress-fill" id="overlay-progress" style="width:0%;"></div>
+        </div>
+        <p id="overlay-sub" style="font-size:11px;opacity:.75;"></p>
+      </div>
+    </div>
+
+    <!-- Histogram -->
+    <div id="histogram-wrap" style="display:none;">
+      <div class="section-label">Histogram</div>
+      <canvas id="histogram-canvas" height="48" style="width:100%;border-radius:7px;background:var(--input-bg);border:1px solid var(--panel-border);display:block;"></canvas>
     </div>
   </div>
 
   <!-- SIDEBAR -->
   <div id="studio-sidebar">
 
-    <!-- 1. Load -->
+    <!-- 1. Load Image -->
     <div class="panel">
       <div class="section-label">1 · Load Image</div>
       <div id="drop-zone">
         <input type="file" id="file-input" accept="image/*">
         <div style="font-size:26px;margin-bottom:5px;">📁</div>
-        <p style="font-size:12px;font-weight:600;color:var(--input-text);">Drop here or click to upload</p>
+        <p style="font-size:12px;font-weight:600;color:var(--input-text);">Drop here or tap to upload</p>
         <p style="font-size:11px;color:var(--section-label);margin-top:2px;">JPG · PNG · WebP · GIF</p>
       </div>
       <div style="display:flex;gap:6px;margin-top:9px;">
         <input type="text" id="url-input" placeholder="Or paste image URL…" class="inp" style="flex:1;width:auto;">
-        <button class="btn btn-ghost btn-sm" onclick="fetchUrl()" data-tip="Load from URL">↓</button>
+        <button class="btn btn-ghost btn-sm" onclick="fetchUrl()">↓</button>
       </div>
       <p id="url-status" style="font-size:11px;margin-top:5px;display:none;"></p>
     </div>
 
-    <!-- 2. Edit Tools -->
+    <!-- 2. Edit Tools — collapsible on mobile -->
     <div class="panel" style="flex:1;">
-      <div class="section-label">2 · Edit Tools</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:12px;">
-        <button class="icon-btn active" data-tab="tab-crop"    onclick="switchTab(this,'tab-crop')">   <span class="ico">✂️</span>Crop</button>
-        <button class="icon-btn"        data-tab="tab-adjust"  onclick="switchTab(this,'tab-adjust')"> <span class="ico">🎛</span>Adjust</button>
-        <button class="icon-btn"        data-tab="tab-filters" onclick="switchTab(this,'tab-filters')"><span class="ico">✨</span>Filters</button>
-        <button class="icon-btn"        data-tab="tab-bg"      onclick="switchTab(this,'tab-bg')">     <span class="ico">🪄</span>BG</button>
-      </div>
+      <!-- Toggle button (mobile only) -->
+      <button id="tools-toggle" onclick="toggleToolsPanel()">
+        <span>2 · Edit Tools</span>
+        <span id="tools-toggle-arrow">▼</span>
+      </button>
+      <!-- Always visible section label on desktop -->
+      <div class="section-label" style="display:none;" id="tools-label-desktop">2 · Edit Tools</div>
 
-      <!-- Crop -->
-      <div id="tab-crop" class="tab-panel active">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
-          <button class="btn btn-purple"  onclick="startCrop()">✂️ Free Crop</button>
-          <button class="btn btn-success" id="apply-crop-btn" onclick="applyCrop()" style="display:none;">✅ Apply</button>
-          <button class="btn btn-ghost"   onclick="rotateCW()"  data-tip="Rotate 90° CW">↻ Rotate CW</button>
-          <button class="btn btn-ghost"   onclick="rotateCCW()" data-tip="Rotate 90° CCW">↺ Rotate CCW</button>
-          <button class="btn btn-ghost"   onclick="flipH()"     data-tip="Mirror horizontally">↔ Flip H</button>
-          <button class="btn btn-ghost"   onclick="flipV()"     data-tip="Mirror vertically">↕ Flip V</button>
-        </div>
-        <div class="section-label" style="margin-top:2px;">Aspect Ratio Lock</div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;">
-          <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(16/9)"> <span class="ico" style="font-size:15px;">📺</span>16:9</button>
-          <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(1)">    <span class="ico" style="font-size:15px;">⬛</span>1:1</button>
-          <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(4/3)">  <span class="ico" style="font-size:15px;">🖼</span>4:3</button>
-          <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(9/16)"> <span class="ico" style="font-size:15px;">📱</span>9:16</button>
-          <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(3/2)">  <span class="ico" style="font-size:15px;">📷</span>3:2</button>
-          <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(NaN)">  <span class="ico" style="font-size:15px;">✏️</span>Free</button>
-        </div>
-      </div>
-
-      <!-- Adjust -->
-      <div id="tab-adjust" class="tab-panel">
-        <div class="slider-row"><span class="slider-label">Brightness</span><input type="range" id="r-brightness" min="-100" max="100" value="0" oninput="sv('brightness');liveFilter();"><span class="slider-val" id="v-brightness">0</span></div>
-        <div class="slider-row"><span class="slider-label">Contrast</span>  <input type="range" id="r-contrast"   min="-100" max="100" value="0" oninput="sv('contrast');liveFilter();">  <span class="slider-val" id="v-contrast">0</span></div>
-        <div class="slider-row"><span class="slider-label">Saturation</span><input type="range" id="r-saturation" min="-100" max="100" value="0" oninput="sv('saturation');liveFilter();"><span class="slider-val" id="v-saturation">0</span></div>
-        <div class="slider-row"><span class="slider-label">Hue Rotate</span><input type="range" id="r-hue"        min="-180" max="180" value="0" oninput="sv('hue');liveFilter();">        <span class="slider-val" id="v-hue">0</span></div>
-        <div class="slider-row"><span class="slider-label">Blur</span>      <input type="range" id="r-blur"       min="0" max="20" value="0" step="0.5" oninput="sv('blur');liveFilter();"><span class="slider-val" id="v-blur">0</span></div>
-        <div class="slider-row"><span class="slider-label">Opacity</span>   <input type="range" id="r-opacity"    min="0" max="100" value="100" oninput="sv('opacity');liveFilter();">   <span class="slider-val" id="v-opacity">100</span></div>
-        <div class="slider-row"><span class="slider-label">Sharpen</span>   <input type="range" id="r-sharpen"    min="0" max="5"   value="0"   oninput="sv('sharpen');liveFilter();">   <span class="slider-val" id="v-sharpen">0</span></div>
-        <button class="btn btn-ghost btn-sm btn-full" style="margin-top:5px;" onclick="resetSliders()">↺ Reset Adjustments</button>
-      </div>
-
-      <!-- Filters -->
-      <div id="tab-filters" class="tab-panel">
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;">
-          <button class="icon-btn" onclick="applyPresetFilter('none')">     <span class="ico">🏔</span>Original</button>
-          <button class="icon-btn" onclick="applyPresetFilter('grayscale')"><span class="ico">⬜</span>B&W</button>
-          <button class="icon-btn" onclick="applyPresetFilter('sepia')">    <span class="ico">🟫</span>Sepia</button>
-          <button class="icon-btn" onclick="applyPresetFilter('invert')">   <span class="ico">🔄</span>Invert</button>
-          <button class="icon-btn" onclick="applyPresetFilter('vintage')">  <span class="ico">📷</span>Vintage</button>
-          <button class="icon-btn" onclick="applyPresetFilter('cool')">     <span class="ico">🧊</span>Cool</button>
-          <button class="icon-btn" onclick="applyPresetFilter('warm')">     <span class="ico">🌅</span>Warm</button>
-          <button class="icon-btn" onclick="applyPresetFilter('dramatic')"> <span class="ico">🎭</span>Dramatic</button>
-          <button class="icon-btn" onclick="applyPresetFilter('fade')">     <span class="ico">🌫</span>Fade</button>
-          <button class="icon-btn" onclick="applyPresetFilter('neon')">     <span class="ico">🌈</span>Neon</button>
-          <button class="icon-btn" onclick="applyPresetFilter('noir')">     <span class="ico">🎬</span>Noir</button>
-          <button class="icon-btn" onclick="applyPresetFilter('summer')">   <span class="ico">☀️</span>Summer</button>
-        </div>
-        <p id="filter-active" style="font-size:11px;color:#3b82f6;text-align:center;margin-top:8px;font-weight:600;min-height:16px;"></p>
-      </div>
-
-      <!-- BG Removal -->
-      <div id="tab-bg" class="tab-panel">
-
-        <div id="bg-status-box" class="info" style="margin-bottom:10px;">
-          <strong>🤖 AI Background Removal</strong><br>
-          Runs on your server via Python. Supports multiple AI models — <strong>BiRefNet Portrait</strong> gives the best results for people &amp; hair.
+      <div id="sidebar-tools-body">
+        <!-- Tab buttons: 2×2 grid on mobile for bigger touch targets -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:12px;">
+          <button class="icon-btn active" data-tab="tab-crop"    onclick="switchTab(this,'tab-crop')">   <span class="ico">✂️</span>Crop</button>
+          <button class="icon-btn"        data-tab="tab-adjust"  onclick="switchTab(this,'tab-adjust')"> <span class="ico">🎛</span>Adjust</button>
+          <button class="icon-btn"        data-tab="tab-filters" onclick="switchTab(this,'tab-filters')"><span class="ico">✨</span>Filters</button>
+          <button class="icon-btn"        data-tab="tab-bg"      onclick="switchTab(this,'tab-bg')">     <span class="ico">🪄</span>BG</button>
         </div>
 
-        <!-- Model selector -->
-        <div class="section-label">AI Model</div>
-        <select id="bg-model" class="inp" style="margin-bottom:8px;">
-          <option value="birefnet-portrait">⭐ BiRefNet Portrait — Best for people</option>
-          <option value="isnet-general-use">IsNet General — Great all-purpose</option>
-          <option value="u2net_human_seg">U2Net Human — Fast human seg</option>
-          <option value="u2net">U2Net — Fast, general</option>
-        </select>
+        <!-- Crop -->
+        <div id="tab-crop" class="tab-panel active">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+            <button class="btn btn-purple"  onclick="startCrop()">✂️ Free Crop</button>
+            <button class="btn btn-success" id="apply-crop-btn" onclick="applyCrop()" style="display:none;">✅ Apply</button>
+            <button class="btn btn-ghost"   onclick="rotateCW()">↻ Rotate CW</button>
+            <button class="btn btn-ghost"   onclick="rotateCCW()">↺ Rotate CCW</button>
+            <button class="btn btn-ghost"   onclick="flipH()">↔ Flip H</button>
+            <button class="btn btn-ghost"   onclick="flipV()">↕ Flip V</button>
+          </div>
+          <div class="section-label" style="margin-top:2px;">Aspect Ratio Lock</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;">
+            <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(16/9)"> <span class="ico" style="font-size:15px;">📺</span>16:9</button>
+            <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(1)">    <span class="ico" style="font-size:15px;">⬛</span>1:1</button>
+            <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(4/3)">  <span class="ico" style="font-size:15px;">🖼</span>4:3</button>
+            <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(9/16)"> <span class="ico" style="font-size:15px;">📱</span>9:16</button>
+            <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(3/2)">  <span class="ico" style="font-size:15px;">📷</span>3:2</button>
+            <button class="icon-btn" style="font-size:10px;" onclick="setCropRatio(NaN)">  <span class="ico" style="font-size:15px;">✏️</span>Free</button>
+          </div>
+        </div>
 
-        <!-- Alpha matting toggle -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <span style="font-size:12px;font-weight:600;color:var(--adjust-label);">Alpha Matting <span style="font-size:10px;color:var(--section-label);">(refines hair/edges)</span></span>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-            <input type="checkbox" id="bg-alpha-matting" checked style="width:14px;height:14px;accent-color:#3b82f6;">
-            <span style="font-size:11px;color:var(--section-label);">On</span>
+        <!-- Adjust -->
+        <div id="tab-adjust" class="tab-panel">
+          <div class="slider-row"><span class="slider-label">Brightness</span><input type="range" id="r-brightness" min="-100" max="100" value="0" oninput="sv('brightness');liveFilter();"><span class="slider-val" id="v-brightness">0</span></div>
+          <div class="slider-row"><span class="slider-label">Contrast</span>  <input type="range" id="r-contrast"   min="-100" max="100" value="0" oninput="sv('contrast');liveFilter();">  <span class="slider-val" id="v-contrast">0</span></div>
+          <div class="slider-row"><span class="slider-label">Saturation</span><input type="range" id="r-saturation" min="-100" max="100" value="0" oninput="sv('saturation');liveFilter();"><span class="slider-val" id="v-saturation">0</span></div>
+          <div class="slider-row"><span class="slider-label">Hue Rotate</span><input type="range" id="r-hue"        min="-180" max="180" value="0" oninput="sv('hue');liveFilter();">        <span class="slider-val" id="v-hue">0</span></div>
+          <div class="slider-row"><span class="slider-label">Blur</span>      <input type="range" id="r-blur"       min="0" max="20" value="0" step="0.5" oninput="sv('blur');liveFilter();"><span class="slider-val" id="v-blur">0</span></div>
+          <div class="slider-row"><span class="slider-label">Opacity</span>   <input type="range" id="r-opacity"    min="0" max="100" value="100" oninput="sv('opacity');liveFilter();">   <span class="slider-val" id="v-opacity">100</span></div>
+          <div class="slider-row"><span class="slider-label">Sharpen</span>   <input type="range" id="r-sharpen"    min="0" max="5"   value="0"   oninput="sv('sharpen');liveFilter();">   <span class="slider-val" id="v-sharpen">0</span></div>
+          <button class="btn btn-ghost btn-sm btn-full" style="margin-top:5px;" onclick="resetSliders()">↺ Reset Adjustments</button>
+        </div>
+
+        <!-- Filters -->
+        <div id="tab-filters" class="tab-panel">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;">
+            <button class="icon-btn" onclick="applyPresetFilter('none')">     <span class="ico">🏔</span>Original</button>
+            <button class="icon-btn" onclick="applyPresetFilter('grayscale')"><span class="ico">⬜</span>B&W</button>
+            <button class="icon-btn" onclick="applyPresetFilter('sepia')">    <span class="ico">🟫</span>Sepia</button>
+            <button class="icon-btn" onclick="applyPresetFilter('invert')">   <span class="ico">🔄</span>Invert</button>
+            <button class="icon-btn" onclick="applyPresetFilter('vintage')">  <span class="ico">📷</span>Vintage</button>
+            <button class="icon-btn" onclick="applyPresetFilter('cool')">     <span class="ico">🧊</span>Cool</button>
+            <button class="icon-btn" onclick="applyPresetFilter('warm')">     <span class="ico">🌅</span>Warm</button>
+            <button class="icon-btn" onclick="applyPresetFilter('dramatic')"> <span class="ico">🎭</span>Dramatic</button>
+            <button class="icon-btn" onclick="applyPresetFilter('fade')">     <span class="ico">🌫</span>Fade</button>
+            <button class="icon-btn" onclick="applyPresetFilter('neon')">     <span class="ico">🌈</span>Neon</button>
+            <button class="icon-btn" onclick="applyPresetFilter('noir')">     <span class="ico">🎬</span>Noir</button>
+            <button class="icon-btn" onclick="applyPresetFilter('summer')">   <span class="ico">☀️</span>Summer</button>
+          </div>
+          <p id="filter-active" style="font-size:11px;color:#3b82f6;text-align:center;margin-top:8px;font-weight:600;min-height:16px;"></p>
+        </div>
+
+        <!-- BG Removal -->
+        <div id="tab-bg" class="tab-panel">
+          <div id="bg-status-box" class="info" style="margin-bottom:10px;">
+            <strong>🤖 AI Background Removal</strong><br>
+            Runs on your server via Python. <strong>BiRefNet Portrait</strong> gives the best results for people &amp; hair.
+          </div>
+          <div class="section-label">AI Model</div>
+          <select id="bg-model" class="inp" style="margin-bottom:8px;">
+            <option value="birefnet-portrait">⭐ BiRefNet Portrait — Best for people</option>
+            <option value="isnet-general-use">IsNet General — Great all-purpose</option>
+            <option value="u2net_human_seg">U2Net Human — Fast human seg</option>
+            <option value="u2net">U2Net — Fast, general</option>
+          </select>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <span style="font-size:12px;font-weight:600;color:var(--adjust-label);">Alpha Matting <span style="font-size:10px;color:var(--section-label);">(refines edges)</span></span>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="bg-alpha-matting" checked style="width:16px;height:16px;accent-color:#3b82f6;">
+              <span style="font-size:11px;color:var(--section-label);">On</span>
+            </label>
+          </div>
+          <button class="btn btn-danger btn-full" id="bg-remove-btn" onclick="removeBackground()" style="padding:12px;font-size:13px;margin-bottom:8px;">
+            🪄 Remove Background
+          </button>
+          <div id="bg-progress-wrap" style="display:none;margin-bottom:10px;">
+            <div class="progress-bar"><div class="progress-fill" id="bg-progress" style="width:0%"></div></div>
+            <p id="bg-progress-label" style="font-size:11px;color:var(--section-label);text-align:center;margin-top:4px;"></p>
+          </div>
+          <button class="btn btn-ghost btn-sm btn-full" id="bg-restore-btn" onclick="restoreOriginal()" style="display:none;margin-bottom:12px;">↩ Restore Original</button>
+          <div class="section-label">Replace Background Color</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px;">
+            <button class="icon-btn" onclick="setBgColor('transparent')"><span class="swatch" style="background:repeating-conic-gradient(#ccc 0% 25%,#fff 0% 50%) 0 0/8px 8px;"></span>None</button>
+            <button class="icon-btn" onclick="setBgColor('#ffffff')"><span class="swatch" style="background:#fff;"></span>White</button>
+            <button class="icon-btn" onclick="setBgColor('#000000')"><span class="swatch" style="background:#000;"></span>Black</button>
+            <button class="icon-btn" onclick="setBgColor('#1e293b')"><span class="swatch" style="background:#1e293b;"></span>Dark</button>
+            <button class="icon-btn" onclick="setBgColor('#eff6ff')"><span class="swatch" style="background:#eff6ff;border-color:#bfdbfe;"></span>Sky</button>
+            <button class="icon-btn" onclick="setBgColor('#fef3c7')"><span class="swatch" style="background:#fef3c7;"></span>Cream</button>
+            <button class="icon-btn" onclick="setBgColor('#f0fdf4')"><span class="swatch" style="background:#f0fdf4;"></span>Mint</button>
+            <label class="icon-btn" style="cursor:pointer;"><span class="ico" style="font-size:15px;">🎨</span>Custom<input type="color" id="custom-bg-color" style="position:absolute;opacity:0;width:0;height:0;" oninput="setBgColor(this.value)"></label>
+          </div>
+          <div class="section-label">Replace with Image</div>
+          <label class="btn btn-ghost btn-sm btn-full" style="cursor:pointer;display:inline-flex;">
+            📂 Choose Background Image
+            <input type="file" id="bg-image-input" accept="image/*" style="display:none;" onchange="setBgImage(this)">
           </label>
+          <p style="font-size:10.5px;color:var(--section-label);margin-top:10px;line-height:1.5;">
+            💡 First use downloads the model (~50–170 MB) to your server cache. Subsequent runs are instant.
+          </p>
         </div>
-
-        <!-- Remove button -->
-        <button class="btn btn-danger btn-full" id="bg-remove-btn" onclick="removeBackground()" style="padding:12px;font-size:13px;margin-bottom:8px;">
-          🪄 Remove Background
-        </button>
-
-        <!-- Progress -->
-        <div id="bg-progress-wrap" style="display:none;margin-bottom:10px;">
-          <div class="progress-bar"><div class="progress-fill" id="bg-progress" style="width:0%"></div></div>
-          <p id="bg-progress-label" style="font-size:11px;color:var(--section-label);text-align:center;margin-top:4px;"></p>
-        </div>
-
-        <!-- Restore -->
-        <button class="btn btn-ghost btn-sm btn-full" id="bg-restore-btn" onclick="restoreOriginal()" style="display:none;margin-bottom:12px;">↩ Restore Original</button>
-
-        <!-- Replace BG color -->
-        <div class="section-label">Replace Background Color</div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px;">
-          <button class="icon-btn" onclick="setBgColor('transparent')" data-tip="Keep transparent">
-            <span class="swatch" style="background:repeating-conic-gradient(#ccc 0% 25%,#fff 0% 50%) 0 0/8px 8px;"></span>None
-          </button>
-          <button class="icon-btn" onclick="setBgColor('#ffffff')" data-tip="White">
-            <span class="swatch" style="background:#fff;"></span>White
-          </button>
-          <button class="icon-btn" onclick="setBgColor('#000000')" data-tip="Black">
-            <span class="swatch" style="background:#000;"></span>Black
-          </button>
-          <button class="icon-btn" onclick="setBgColor('#1e293b')" data-tip="Dark navy">
-            <span class="swatch" style="background:#1e293b;"></span>Dark
-          </button>
-          <button class="icon-btn" onclick="setBgColor('#eff6ff')" data-tip="Light blue">
-            <span class="swatch" style="background:#eff6ff;border-color:#bfdbfe;"></span>Sky
-          </button>
-          <button class="icon-btn" onclick="setBgColor('#fef3c7')" data-tip="Cream">
-            <span class="swatch" style="background:#fef3c7;"></span>Cream
-          </button>
-          <button class="icon-btn" onclick="setBgColor('#f0fdf4')" data-tip="Mint">
-            <span class="swatch" style="background:#f0fdf4;"></span>Mint
-          </button>
-          <label class="icon-btn" data-tip="Pick any color" style="cursor:pointer;">
-            <span class="ico" style="font-size:15px;">🎨</span>Custom
-            <input type="color" id="custom-bg-color" style="position:absolute;opacity:0;width:0;height:0;" oninput="setBgColor(this.value)">
-          </label>
-        </div>
-
-        <!-- Replace BG with image -->
-        <div class="section-label">Replace with Image</div>
-        <label class="btn btn-ghost btn-sm btn-full" style="cursor:pointer;display:inline-flex;">
-          📂 Choose Background Image
-          <input type="file" id="bg-image-input" accept="image/*" style="display:none;" onchange="setBgImage(this)">
-        </label>
-
-        <!-- Tip -->
-        <p style="font-size:10.5px;color:var(--section-label);margin-top:10px;line-height:1.5;">
-          💡 <strong>First use</strong> downloads the model (~50–170 MB) to your server cache. Subsequent runs are instant.
-        </p>
-      </div>
+      </div><!-- /sidebar-tools-body -->
     </div>
 
     <!-- 3. Export -->
@@ -461,60 +537,62 @@
 
   </div><!-- /sidebar -->
 
-  <!-- CANVAS AREA -->
-  <div id="studio-canvas-area">
+</div><!-- /studio-shell -->
 
-    <!-- Toolbar -->
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-      <div style="display:flex;gap:5px;flex-wrap:wrap;">
-        <button class="btn btn-ghost btn-sm" onclick="zoomIn()"     data-tip="Zoom in">🔍+</button>
-        <button class="btn btn-ghost btn-sm" onclick="zoomOut()"    data-tip="Zoom out">🔍−</button>
-        <button class="btn btn-ghost btn-sm" onclick="zoomFit()"    data-tip="Fit to view">⊡ Fit</button>
-        <button class="btn btn-ghost btn-sm" onclick="zoomActual()" data-tip="100% actual pixels">1:1</button>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span id="zoom-label" style="font-size:11px;color:var(--section-label);">—</span>
-        <span class="badge" id="canvas-size-badge" style="display:none;"></span>
-      </div>
-    </div>
-
-    <!-- Preview -->
-    <div id="preview-area">
-      <div id="placeholder" style="text-align:center;color:var(--section-label);pointer-events:none;padding:20px;">
-        <div style="font-size:54px;margin-bottom:12px;line-height:1;">🖼️</div>
-        <p style="font-size:14px;font-weight:600;color:var(--input-text);">Drop an image here or use the sidebar</p>
-        <p style="font-size:12px;margin-top:4px;">Supports JPG · PNG · WebP · GIF</p>
-      </div>
-      <img id="main-img" alt="Preview">
-      <canvas id="canvas-el"></canvas>
-      <div id="canvas-overlay">
-        <div class="spinner"></div>
-        <p id="overlay-label" style="font-size:13px;font-weight:600;">Processing…</p>
-        <div style="width:260px;" class="progress-bar">
-          <div class="progress-fill" id="overlay-progress" style="width:0%;"></div>
-        </div>
-        <p id="overlay-sub" style="font-size:11px;opacity:.75;"></p>
-      </div>
-    </div>
-
-    <!-- Histogram -->
-    <div id="histogram-wrap" style="display:none;">
-      <div class="section-label">Histogram</div>
-      <canvas id="histogram-canvas" height="48" style="width:100%;border-radius:7px;background:var(--input-bg);border:1px solid var(--panel-border);display:block;"></canvas>
-    </div>
-  </div>
-
-</div>
-
-<!-- Cropper.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 
-<!-- No JS library needed — BG removal runs server-side via /api/image/remove-bg -->
-
 <script>
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
+// MOBILE TOOLS PANEL TOGGLE
+// ─────────────────────────────────────────────
+function toggleToolsPanel() {
+  const body  = document.getElementById('sidebar-tools-body');
+  const arrow = document.getElementById('tools-toggle-arrow');
+  const open  = body.classList.toggle('open');
+  arrow.textContent = open ? '▲' : '▼';
+}
+
+// On desktop: always show the tools body and hide the toggle button
+function initToolsLayout() {
+  const isMobile = window.innerWidth < 768;
+  const body   = document.getElementById('sidebar-tools-body');
+  const toggle = document.getElementById('tools-toggle');
+  const label  = document.getElementById('tools-label-desktop');
+  if (!isMobile) {
+    body.style.display  = 'block';
+    toggle.style.display = 'none';
+    label.style.display  = 'block';
+  } else {
+    // Start collapsed on mobile
+    body.classList.remove('open');
+    document.getElementById('tools-toggle-arrow').textContent = '▼';
+  }
+}
+initToolsLayout();
+window.addEventListener('resize', initToolsLayout);
+
+// Touch support for drawing mask on canvas
+canvasEl && canvasEl.addEventListener('touchstart', e => {
+  e.preventDefault(); drawing = true;
+}, { passive: false });
+canvasEl && canvasEl.addEventListener('touchend', () => drawing = false);
+canvasEl && canvasEl.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!drawing) return;
+  const touch = e.touches[0];
+  const rect  = canvasEl.getBoundingClientRect();
+  const x = (touch.clientX - rect.left) * (workCanvas.width / rect.width);
+  const y = (touch.clientY - rect.top)  * (workCanvas.height / rect.height);
+  maskCtx.fillStyle = 'white';
+  maskCtx.beginPath();
+  maskCtx.arc(x, y, brushSize, 0, Math.PI * 2);
+  maskCtx.fill();
+  drawMaskOverlay();
+}, { passive: false });
+
+// ─────────────────────────────────────────────
 // STATE
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 let workCanvas = document.createElement('canvas');
 let workCtx    = workCanvas.getContext('2d');
 let origDataUrl = null;
@@ -522,8 +600,6 @@ let bgRemovedDataUrl = null;
 let cropper = null;
 let activeFilter = 'none';
 let zoomLevel = 1;
-
-// new***********************************************
 let maskCanvas = document.createElement('canvas');
 let maskCtx = maskCanvas.getContext('2d');
 let drawing = false;
@@ -541,9 +617,9 @@ function setDownloadEnabled(v) {
   ['download-btn','download-btn-sidebar'].forEach(id => document.getElementById(id).disabled = !v);
 }
 
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 // LOAD
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 document.getElementById('file-input').addEventListener('change', e => {
   const f = e.target.files[0];
   if (f) readFile(f);
@@ -555,7 +631,6 @@ function readFile(file) {
   r.readAsDataURL(file);
 }
 
-// Drop zone
 const dropZone = document.getElementById('drop-zone');
 dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
@@ -565,7 +640,6 @@ dropZone.addEventListener('drop', e => {
   if (f && f.type.startsWith('image/')) readFile(f);
 });
 
-// Drop on canvas
 document.getElementById('preview-area').addEventListener('dragover', e => e.preventDefault());
 document.getElementById('preview-area').addEventListener('drop', e => {
   e.preventDefault();
@@ -595,14 +669,20 @@ function loadImageFromSrc(src) {
     updateBadges(img.naturalWidth, img.naturalHeight);
     setDownloadEnabled(true);
     drawHistogram();
+    // On mobile, auto-expand tools panel after loading image
+    if (window.innerWidth < 768) {
+      const body = document.getElementById('sidebar-tools-body');
+      if (!body.classList.contains('open')) toggleToolsPanel();
+      document.getElementById('studio-sidebar').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
-  img.onerror = () => showUrlStatus('Could not load image', 'error');
+  img.onerror = () => showUrlStatus('Could not load image', '#dc2626');
   img.src = src;
 }
 
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 // DISPLAY
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 function renderToDisplay() {
   placeholder.style.display = 'none';
   mainImg.style.display = 'none';
@@ -624,9 +704,9 @@ function updateBadges(w, h) {
   document.getElementById('zoom-label').textContent = Math.round(zoomLevel * 100) + '%';
 }
 
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 // URL FETCH
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 async function fetchUrl() {
   const url = document.getElementById('url-input').value.trim();
   if (!url) return;
@@ -649,9 +729,9 @@ function showUrlStatus(msg, color) {
   el.style.display = 'block';
 }
 
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 // CROP
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 function startCrop() {
   if (!origDataUrl) return alert('Load an image first.');
   destroyCropper();
@@ -691,9 +771,9 @@ function setCropRatio(ratio) {
 }
 window.setCropRatio = setCropRatio;
 
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 // ROTATE / FLIP
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 function transformCanvas(angleDeg, sx, sy) {
   if (!origDataUrl) return;
   const rad = angleDeg * Math.PI / 180;
@@ -718,9 +798,9 @@ function flipV()     { transformCanvas(0,   1,-1); }
 window.rotateCW = rotateCW; window.rotateCCW = rotateCCW;
 window.flipH = flipH; window.flipV = flipV;
 
-// ═══════════════════════════════════════════════
-// ADJUSTMENTS + FILTERS (non-destructive CSS)
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
+// ADJUSTMENTS + FILTERS
+// ─────────────────────────────────────────────
 function sv(id) {
   document.getElementById('v-' + id).textContent = document.getElementById('r-' + id).value;
 }
@@ -780,101 +860,62 @@ function resetSliders() {
 }
 window.resetSliders = resetSliders;
 
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 // BACKGROUND REMOVAL
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 async function removeBackground() {
   if (!origDataUrl) return alert('Load an image first.');
-
   const btn  = document.getElementById('bg-remove-btn');
   const wrap = document.getElementById('bg-progress-wrap');
   const bar  = document.getElementById('bg-progress');
   const lbl  = document.getElementById('bg-progress-label');
-
-  btn.disabled = true;
-  btn.textContent = '⏳ Processing…';
-  wrap.style.display = 'block';
-  bar.style.width = '15%';
-  lbl.textContent = 'Uploading to server…';
+  btn.disabled = true; btn.textContent = '⏳ Processing…';
+  wrap.style.display = 'block'; bar.style.width = '15%'; lbl.textContent = 'Uploading to server…';
   showOverlay('Removing background…', 15);
-
   try {
-    // Convert working canvas to a Blob for upload
     const blob = await new Promise((res, rej) =>
       workCanvas.toBlob(b => b ? res(b) : rej(new Error('Canvas export failed')), 'image/png')
     );
-
-    bar.style.width = '40%';
-    lbl.textContent = 'AI processing (u2net model)…';
-    overlayPrg.style.width = '40%';
-
+    bar.style.width = '40%'; lbl.textContent = 'AI processing…'; overlayPrg.style.width = '40%';
     const formData = new FormData();
     formData.append('file', blob, 'image.png');
     formData.append('model', document.getElementById('bg-model').value);
     formData.append('alpha_matting', document.getElementById('bg-alpha-matting').checked);
-
-    const res = await fetch('/api/image/remove-bg', {
-      method: 'POST',
-      body: formData
-    });
-
-    bar.style.width = '85%';
-    overlayPrg.style.width = '85%';
-    lbl.textContent = 'Finalizing…';
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(err.detail || 'Server error');
-    }
-
+    const res = await fetch('/api/image/remove-bg', { method: 'POST', body: formData });
+    bar.style.width = '85%'; overlayPrg.style.width = '85%'; lbl.textContent = 'Finalizing…';
+    if (!res.ok) { const err = await res.json().catch(() => ({ detail: res.statusText })); throw new Error(err.detail || 'Server error'); }
     const data = await res.json();
-    const b64src = data.base64;
-
-    bar.style.width = '100%';
-    overlayPrg.style.width = '100%';
-
+    bar.style.width = '100%'; overlayPrg.style.width = '100%';
     const img = new Image();
     img.onload = () => {
-      // Save for color replacement
       const tmp = document.createElement('canvas');
       tmp.width = img.naturalWidth; tmp.height = img.naturalHeight;
       tmp.getContext('2d').drawImage(img, 0, 0);
       bgRemovedDataUrl = tmp.toDataURL('image/png');
-
-      workCanvas.width  = img.naturalWidth;
-      workCanvas.height = img.naturalHeight;
+      workCanvas.width = img.naturalWidth; workCanvas.height = img.naturalHeight;
       workCtx.clearRect(0, 0, workCanvas.width, workCanvas.height);
       workCtx.drawImage(img, 0, 0);
-
-      renderToDisplay();
-      updateBadges(workCanvas.width, workCanvas.height);
+      renderToDisplay(); updateBadges(workCanvas.width, workCanvas.height);
       setBgStatus('✓ Background removed! Export as PNG to keep transparency, or pick a replacement color below.', 'ok');
       document.getElementById('bg-restore-btn').style.display = 'inline-flex';
-      // Auto-switch format to PNG since result is transparent
       document.getElementById('format-select').value = 'image/png';
       hideOverlay();
       setTimeout(() => { wrap.style.display = 'none'; }, 3000);
       drawHistogram();
     };
     img.onerror = () => { throw new Error('Failed to decode server result'); };
-    img.src = b64src;
-
+    img.src = data.base64;
   } catch(e) {
-    setBgStatus('✗ ' + e.message, 'error');
-    hideOverlay();
-    wrap.style.display = 'none';
-    console.error('[BG Removal]', e);
+    setBgStatus('✗ ' + e.message, 'error'); hideOverlay(); wrap.style.display = 'none';
   } finally {
-    btn.disabled = false;
-    btn.textContent = '🪄 Remove Background';
+    btn.disabled = false; btn.textContent = '🪄 Remove Background';
   }
 }
 window.removeBackground = removeBackground;
 
 function setBgStatus(msg, type) {
   const box = document.getElementById('bg-status-box');
-  box.textContent = msg;
-  box.className = type;
+  box.textContent = msg; box.className = type;
 }
 
 function restoreOriginal() {
@@ -931,56 +972,38 @@ function setBgImage(input) {
 }
 window.setBgImage = setBgImage;
 
-canvasEl.addEventListener('mousedown', e => {
-  drawing = true;
-});
-
-canvasEl.addEventListener('mouseup', () => drawing = false);
-
+// Mouse drawing
+canvasEl.addEventListener('mousedown', () => { drawing = true; });
+canvasEl.addEventListener('mouseup',   () => { drawing = false; });
 canvasEl.addEventListener('mousemove', e => {
   if (!drawing) return;
-
   const rect = canvasEl.getBoundingClientRect();
   const x = (e.clientX - rect.left) * (workCanvas.width / rect.width);
-  const y = (e.clientY - rect.top) * (workCanvas.height / rect.height);
-
+  const y = (e.clientY - rect.top)  * (workCanvas.height / rect.height);
   maskCtx.fillStyle = 'white';
-  maskCtx.beginPath();
-  maskCtx.arc(x, y, brushSize, 0, Math.PI * 2);
-  maskCtx.fill();
-
+  maskCtx.beginPath(); maskCtx.arc(x, y, brushSize, 0, Math.PI * 2); maskCtx.fill();
   drawMaskOverlay();
 });
 
 function drawMaskOverlay() {
   const ctx = canvasEl.getContext('2d');
   ctx.drawImage(workCanvas, 0, 0);
-
-  ctx.globalAlpha = 0.4;
-  ctx.drawImage(maskCanvas, 0, 0);
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha = 0.4; ctx.drawImage(maskCanvas, 0, 0); ctx.globalAlpha = 1;
 }
 
 async function applyMagicRemove() {
-  const imgBlob = await new Promise(r => workCanvas.toBlob(r));
+  const imgBlob  = await new Promise(r => workCanvas.toBlob(r));
   const maskBlob = await new Promise(r => maskCanvas.toBlob(r));
-
   const fd = new FormData();
-  fd.append("image", imgBlob);
-  fd.append("mask", maskBlob);
-
-  const res = await fetch('/api/image/magic-remove', {
-    method: 'POST',
-    body: fd
-  });
-
+  fd.append("image", imgBlob); fd.append("mask", maskBlob);
+  const res  = await fetch('/api/image/magic-remove', { method: 'POST', body: fd });
   const data = await res.json();
   loadImageFromSrc(data.base64);
 }
 
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 // OVERLAY
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 function showOverlay(label, pct) {
   overlay.classList.add('visible');
   overlayLbl.textContent = label;
@@ -989,9 +1012,9 @@ function showOverlay(label, pct) {
 }
 function hideOverlay() { overlay.classList.remove('visible'); }
 
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 // ZOOM
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 function applyZoom() {
   canvasEl.style.transform = `scale(${zoomLevel})`;
   canvasEl.style.transformOrigin = 'center center';
@@ -1003,9 +1026,9 @@ function zoomFit()   { zoomLevel = 1; applyZoom(); }
 function zoomActual(){ if (!origDataUrl) return; zoomLevel = workCanvas.width / document.getElementById('preview-area').clientWidth; applyZoom(); }
 window.zoomIn=zoomIn; window.zoomOut=zoomOut; window.zoomFit=zoomFit; window.zoomActual=zoomActual;
 
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 // HISTOGRAM
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 function drawHistogram() {
   const wrap = document.getElementById('histogram-wrap');
   if (!origDataUrl) { wrap.style.display='none'; return; }
@@ -1027,9 +1050,9 @@ function drawHistogram() {
   });
 }
 
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 // EXPORT
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 function toggleCustomSize() {
   document.getElementById('custom-size-row').style.display =
     document.getElementById('preset-select').value === 'custom' ? 'grid' : 'none';
@@ -1042,7 +1065,6 @@ function downloadImage() {
   const quality = parseFloat(document.getElementById('quality-select').value);
   const preset  = document.getElementById('preset-select').value;
   const ext = {'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[format]||'jpg';
-
   let tW = workCanvas.width, tH = workCanvas.height;
   if (preset !== 'original' && preset !== 'custom') {
     [tW, tH] = preset.split(',').map(Number);
@@ -1051,14 +1073,10 @@ function downloadImage() {
     const ch = parseInt(document.getElementById('custom-h').value);
     if (cw>0 && ch>0) { tW=cw; tH=ch; }
   }
-
   const exp = document.createElement('canvas');
   exp.width=tW; exp.height=tH;
   const ctx = exp.getContext('2d');
-  ctx.filter = buildFilter();
-  ctx.drawImage(workCanvas, 0, 0, tW, tH);
-  ctx.filter = 'none';
-
+  ctx.filter = buildFilter(); ctx.drawImage(workCanvas, 0, 0, tW, tH); ctx.filter = 'none';
   const a = document.createElement('a');
   a.href = exp.toDataURL(format, quality);
   a.download = `studio_export.${ext}`;
@@ -1066,23 +1084,18 @@ function downloadImage() {
 }
 window.downloadImage = downloadImage;
 
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 // RESET
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 function resetAll() {
   origDataUrl = null; bgRemovedDataUrl = null;
   activeFilter = 'none'; zoomLevel = 1;
   workCanvas = document.createElement('canvas');
   workCtx    = workCanvas.getContext('2d');
-
   canvasEl.style.display = 'none'; canvasEl.style.filter = 'none'; canvasEl.style.transform = '';
   mainImg.style.display  = 'none';
   placeholder.style.display='flex'; placeholder.style.flexDirection='column'; placeholder.style.alignItems='center';
-
-  setDownloadEnabled(false);
-  resetSliders();
-  destroyCropper();
-
+  setDownloadEnabled(false); resetSliders(); destroyCropper();
   ['img-info','canvas-size-badge'].forEach(id => document.getElementById(id).style.display='none');
   document.getElementById('zoom-label').textContent = '—';
   document.getElementById('file-input').value = '';
@@ -1096,9 +1109,9 @@ function resetAll() {
 }
 window.resetAll = resetAll;
 
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 // TAB SWITCH
-// ═══════════════════════════════════════════════
+// ─────────────────────────────────────────────
 function switchTab(btn, tabId) {
   document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -1106,8 +1119,6 @@ function switchTab(btn, tabId) {
   document.getElementById(tabId).classList.add('active');
 }
 window.switchTab = switchTab;
-
-// (BG lib loaded on-demand via window._loadBgLib — no event listener needed)
 </script>
 
 {% endblock %}
