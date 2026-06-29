@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}TunisiaHub{% endblock %}</title>
 
-    <!-- FIX: Dark mode script MUST be in <head> BEFORE Tailwind to prevent white flash -->
     <script>
         (function() {
             const saved = localStorage.getItem('theme');
@@ -26,15 +25,22 @@
         }
     </script>
     <style>
-        /* Smooth theme transitions — color only, not layout */
         body, aside, nav a, button, input, select, div {
             transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+        }
+        /* Safe area padding for notched phones */
+        #bottom-nav {
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        #global-player {
+            bottom: calc(56px + env(safe-area-inset-bottom, 0px));
         }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white flex h-screen overflow-hidden">
 
-    <aside class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col justify-between p-4 flex-shrink-0 z-40 shadow-sm">
+    <!-- ===================== DESKTOP SIDEBAR (hidden on mobile) ===================== -->
+    <aside class="hidden md:flex w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-col justify-between p-4 flex-shrink-0 z-40 shadow-sm">
         <div>
             <h1 class="text-2xl font-bold mb-10 text-blue-600 dark:text-blue-400">🇹🇳 TunisiaHub</h1>
             <nav class="space-y-1">
@@ -51,7 +57,6 @@
         </div>
 
         <div class="space-y-3">
-            <!-- Dark/Light mode toggle with visual switch -->
             <button id="theme-toggle" onclick="toggleDarkMode()"
                 class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300">
                 <span id="theme-label">Light Mode</span>
@@ -73,36 +78,116 @@
         </div>
     </aside>
 
-    <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- ===================== MAIN CONTENT AREA ===================== -->
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+
+        <!-- Mobile top bar (hidden on desktop) -->
+        <div class="md:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <h1 class="text-lg font-bold text-blue-600 dark:text-blue-400">🇹🇳 TunisiaHub</h1>
+            <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                <span id="theme-label-mobile">☀️</span>
+            </button>
+        </div>
+
         <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-2 text-center text-xs text-gray-400 flex-shrink-0">
             AdSense Placeholder
         </div>
 
-        <div id="app-content" class="flex-1 overflow-y-auto p-8 pb-28 bg-gray-50 dark:bg-gray-900">
+        <!-- pb-32 on mobile to clear player + bottom nav; pb-28 on desktop -->
+        <div id="app-content" class="flex-1 overflow-y-auto p-4 md:p-8 pb-32 md:pb-28 bg-gray-50 dark:bg-gray-900">
             {% block content %}{% endblock %}
         </div>
 
-        <!-- Persistent audio player -->
-        <div id="global-player" class="fixed bottom-0 left-64 right-0 bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 p-3 z-50 transform translate-y-full transition-transform duration-300 shadow-2xl">
-            <div class="flex items-center gap-4 max-w-7xl mx-auto">
-                <img id="player-img" src="" class="w-12 h-12 rounded-lg bg-gray-200 dark:bg-gray-800 hidden object-cover">
+        <!-- Persistent audio player — above bottom nav on mobile -->
+        <div id="global-player" class="fixed left-0 md:left-64 right-0 bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 p-3 z-50 transform translate-y-full transition-transform duration-300 shadow-2xl">
+            <div class="flex items-center gap-3 max-w-7xl mx-auto">
+                <img id="player-img" src="" class="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gray-200 dark:bg-gray-800 hidden object-cover flex-shrink-0">
                 <div class="flex-1 min-w-0">
                     <p id="player-title" class="font-bold text-sm truncate text-gray-900 dark:text-white">No station playing</p>
                 </div>
-                <audio id="global-audio" controls class="w-96 h-10"></audio>
+                <!-- Compact controls on mobile, full audio element on desktop -->
+                <div class="md:hidden flex items-center gap-2">
+                    <button id="mobile-play-btn" onclick="toggleMobilePlay()" class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0">
+                        <svg id="mobile-play-icon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
+                    <button onclick="closePlayer()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 flex items-center justify-center flex-shrink-0 text-lg leading-none">&times;</button>
+                </div>
+                <audio id="global-audio" controls class="hidden md:block w-80 lg:w-96 h-10"></audio>
             </div>
         </div>
-    </div>
+
+        <!-- ===================== MOBILE BOTTOM NAV (hidden on desktop) ===================== -->
+        <nav id="bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex items-stretch">
+            <a href="/" data-nav class="mobile-nav-item flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-gray-500 dark:text-gray-400 active:bg-gray-100 dark:active:bg-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span class="text-xs font-medium">Home</span>
+            </a>
+            <a href="/radio" data-nav class="mobile-nav-item flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-gray-500 dark:text-gray-400 active:bg-gray-100 dark:active:bg-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+                <span class="text-xs font-medium">Radio</span>
+            </a>
+            <a href="/news" data-nav class="mobile-nav-item flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-gray-500 dark:text-gray-400 active:bg-gray-100 dark:active:bg-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+                <span class="text-xs font-medium">Articles</span>
+            </a>
+            <a href="/downloader" data-nav class="mobile-nav-item flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-gray-500 dark:text-gray-400 active:bg-gray-100 dark:active:bg-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                <span class="text-xs font-medium">Télécharger</span>
+            </a>
+            <!-- "More" opens a sheet with remaining pages -->
+            <button onclick="toggleMoreSheet()" class="mobile-nav-item flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-gray-500 dark:text-gray-400 active:bg-gray-100 dark:active:bg-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
+                <span class="text-xs font-medium">Plus</span>
+            </button>
+        </nav>
+
+        <!-- "More" bottom sheet -->
+        <div id="more-sheet-backdrop" onclick="toggleMoreSheet()" class="md:hidden hidden fixed inset-0 bg-black/40 z-40"></div>
+        <div id="more-sheet" class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl transform translate-y-full transition-transform duration-300" style="padding-bottom: env(safe-area-inset-bottom, 16px);">
+            <div class="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mt-3 mb-4"></div>
+            <div class="px-4 pb-4 space-y-1">
+                <a href="/transcription" data-nav onclick="toggleMoreSheet()" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                    Transcription
+                </a>
+                <a href="/image-tools" data-nav onclick="toggleMoreSheet()" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    Image outils
+                </a>
+                {% if request.state.user and request.state.user.is_admin %}
+                <a href="/admin" onclick="toggleMoreSheet()" class="flex items-center gap-3 p-3 rounded-xl hover:bg-yellow-50 dark:hover:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 text-sm font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    Admin Panel
+                </a>
+                {% endif %}
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
+                    {% if request.state.user %}
+                        <div class="px-3 mb-2">
+                            <p class="text-xs text-gray-400">Signed in as <span class="font-semibold text-gray-700 dark:text-gray-300">{{ request.state.user.username }}</span></p>
+                        </div>
+                        <a href="/auth/logout" class="flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 text-sm font-medium">Logout</a>
+                    {% else %}
+                        <a href="/auth/login" data-nav onclick="toggleMoreSheet()" class="block w-full text-center py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium mb-2">Login</a>
+                        <a href="/auth/register" data-nav onclick="toggleMoreSheet()" class="block text-center text-gray-500 text-sm py-2">Create Account</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div><!-- end main wrapper -->
 
     <script>
         // =====================================================
-        // DARK MODE — no-flash, toggle with visual dot
+        // DARK MODE
         // =====================================================
         function updateToggleUI() {
             const isDark = document.documentElement.classList.contains('dark');
-            document.getElementById('theme-label').textContent = isDark ? 'Dark Mode' : 'Light Mode';
+            const label = document.getElementById('theme-label');
+            const labelMobile = document.getElementById('theme-label-mobile');
             const dot = document.getElementById('theme-dot');
-            dot.style.left = isDark ? '19px' : '2px';
+            if (label) label.textContent = isDark ? 'Dark Mode' : 'Light Mode';
+            if (labelMobile) labelMobile.textContent = isDark ? '🌙' : '☀️';
+            if (dot) dot.style.left = isDark ? '19px' : '2px';
         }
 
         function toggleDarkMode() {
@@ -111,12 +196,36 @@
             updateToggleUI();
         }
 
-        // Set initial toggle visual state (already applied in <head>)
-        // Use requestAnimationFrame so the DOM is ready and transitions don't fire on load
         requestAnimationFrame(() => { requestAnimationFrame(updateToggleUI); });
 
         // =====================================================
-        // AJAX NAVIGATION — with module script + link support
+        // MOBILE BOTTOM NAV — active state
+        // =====================================================
+        function setActiveMobileNav(url) {
+            document.querySelectorAll('.mobile-nav-item').forEach(el => {
+                const href = el.getAttribute('href');
+                const isActive = href && (url === href || (href !== '/' && url.startsWith(href)));
+                el.classList.toggle('text-blue-600', isActive);
+                el.classList.toggle('dark:text-blue-400', isActive);
+                el.classList.toggle('text-gray-500', !isActive);
+                el.classList.toggle('dark:text-gray-400', !isActive);
+            });
+        }
+        setActiveMobileNav(window.location.pathname);
+
+        // =====================================================
+        // MORE SHEET
+        // =====================================================
+        function toggleMoreSheet() {
+            const sheet = document.getElementById('more-sheet');
+            const backdrop = document.getElementById('more-sheet-backdrop');
+            const isOpen = !sheet.classList.contains('translate-y-full');
+            sheet.classList.toggle('translate-y-full', isOpen);
+            backdrop.classList.toggle('hidden', isOpen);
+        }
+
+        // =====================================================
+        // AJAX NAVIGATION
         // =====================================================
         const appContent = document.getElementById('app-content');
         const audio = document.getElementById('global-audio');
@@ -147,7 +256,6 @@
                 if (newContent) {
                     appContent.innerHTML = newContent.innerHTML;
 
-                    // Inject link tags (CSS libraries like Cropper)
                     newContent.querySelectorAll('link[rel="stylesheet"]').forEach(oldLink => {
                         if (!document.querySelector(`link[href="${oldLink.href}"]`)) {
                             const l = document.createElement('link');
@@ -157,7 +265,6 @@
                         }
                     });
 
-                    // Re-run scripts — handles classic, module, and external src scripts
                     const scripts = [...newContent.querySelectorAll('script')];
                     const runNext = (i) => {
                         if (i >= scripts.length) return;
@@ -181,6 +288,7 @@
 
                 history.pushState({}, '', url);
                 appContent.scrollTop = 0;
+                setActiveMobileNav(new URL(url).pathname);
             } catch (err) {
                 window.location.href = url;
             }
@@ -193,6 +301,7 @@
                 const doc = new DOMParser().parseFromString(html, 'text/html');
                 const newContent = doc.querySelector('#app-content');
                 if (newContent) appContent.innerHTML = newContent.innerHTML;
+                setActiveMobileNav(window.location.pathname);
             } catch { window.location.reload(); }
         });
 
@@ -204,8 +313,34 @@
             document.getElementById('player-title').innerText = name;
             const img = document.getElementById('player-img');
             if (favicon) { img.src = favicon; img.classList.remove('hidden'); }
+            // On mobile, position player just above bottom nav
+            player.style.bottom = window.innerWidth < 768
+                ? 'calc(56px + env(safe-area-inset-bottom, 0px))'
+                : '0';
             player.classList.remove('translate-y-full');
+            updateMobilePlayIcon();
         }
+
+        function toggleMobilePlay() {
+            if (audio.paused) { audio.play(); } else { audio.pause(); }
+            updateMobilePlayIcon();
+        }
+
+        function updateMobilePlayIcon() {
+            const icon = document.getElementById('mobile-play-icon');
+            if (!icon) return;
+            icon.innerHTML = audio.paused
+                ? '<path d="M8 5v14l11-7z"/>'
+                : '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+        }
+
+        function closePlayer() {
+            audio.pause();
+            player.classList.add('translate-y-full');
+        }
+
+        audio.addEventListener('play', updateMobilePlayIcon);
+        audio.addEventListener('pause', updateMobilePlayIcon);
     </script>
 </body>
 </html>
