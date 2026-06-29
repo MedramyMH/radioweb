@@ -34,4 +34,4 @@ app.include_router(tools.router, tags=["Tools"])
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return TemplateResponse("home.html", {"request": request})
+    return TemplateResponse(request,"home.html")
