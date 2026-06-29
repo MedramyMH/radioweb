@@ -14,5 +14,5 @@ COPY . .
 
 RUN mkdir -p app/static/uploads
 
-EXPOSE $PORT
+EXPOSE 8000
 
