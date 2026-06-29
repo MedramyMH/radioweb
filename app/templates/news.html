@@ -1,35 +1,70 @@
 {% extends "base.html" %}
 {% block title %}News - TunisiaHub{% endblock %}
 {% block content %}
-<div class="flex justify-between items-center mb-6">
-    <h2 class="text-3xl font-bold">📰 News</h2>
-    <div class="flex gap-2">
-        <a href="/news" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">All</a>
-        <a href="/news?category=Politics" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Politics</a>
-        <a href="/news?category=Economy" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Economy</a>
-        <a href="/news?category=Tech" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Tech</a>
-        <a href="/news?category=Sports" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Sports</a>
-        <a href="/news?category=Religion" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Religion</a>
-        <a href="/news?category=Culture" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Culture</a>
-        <a href="/news?category=Health" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Health</a>
-        <a href="/news?category=Education" data-nav class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Education</a>
+
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+    <h2 class="text-2xl sm:text-3xl font-bold">📰 News</h2>
+</div>
+
+<!-- Category filter: horizontal scroll on mobile -->
+<div class="mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+    <div class="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible"
+         style="scrollbar-width: none; -ms-overflow-style: none;">
+        <a href="/news" data-nav
+           class="flex-shrink-0 px-3 py-1.5 text-sm rounded-lg
+                  bg-gray-200 text-gray-800 hover:bg-gray-300
+                  dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">All</a>
+        <a href="/news?category=Politics" data-nav
+           class="flex-shrink-0 px-3 py-1.5 text-sm rounded-lg
+                  bg-gray-200 text-gray-800 hover:bg-gray-300
+                  dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">Politics</a>
+        <a href="/news?category=Economy" data-nav
+           class="flex-shrink-0 px-3 py-1.5 text-sm rounded-lg
+                  bg-gray-200 text-gray-800 hover:bg-gray-300
+                  dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">Economy</a>
+        <a href="/news?category=Tech" data-nav
+           class="flex-shrink-0 px-3 py-1.5 text-sm rounded-lg
+                  bg-gray-200 text-gray-800 hover:bg-gray-300
+                  dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">Tech</a>
+        <a href="/news?category=Sports" data-nav
+           class="flex-shrink-0 px-3 py-1.5 text-sm rounded-lg
+                  bg-gray-200 text-gray-800 hover:bg-gray-300
+                  dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">Sports</a>
+        <a href="/news?category=Religion" data-nav
+           class="flex-shrink-0 px-3 py-1.5 text-sm rounded-lg
+                  bg-gray-200 text-gray-800 hover:bg-gray-300
+                  dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">Religion</a>
+        <a href="/news?category=Culture" data-nav
+           class="flex-shrink-0 px-3 py-1.5 text-sm rounded-lg
+                  bg-gray-200 text-gray-800 hover:bg-gray-300
+                  dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">Culture</a>
+        <a href="/news?category=Health" data-nav
+           class="flex-shrink-0 px-3 py-1.5 text-sm rounded-lg
+                  bg-gray-200 text-gray-800 hover:bg-gray-300
+                  dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">Health</a>
+        <a href="/news?category=Education" data-nav
+           class="flex-shrink-0 px-3 py-1.5 text-sm rounded-lg
+                  bg-gray-200 text-gray-800 hover:bg-gray-300
+                  dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">Education</a>
     </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Grid: 1 col mobile, 2 md, 3 lg -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
     {% for article in articles %}
-    <!-- Wrapped in <a> tag to make it clickable -->
-    <a href="/news/{{ article.id }}" data-nav class="bg-gray-800 rounded-xl overflow-hidden hover:scale-[1.02] transition-transform block">
+    <a href="/news/{{ article.id }}" data-nav
+       class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden
+              hover:scale-[1.02] active:scale-[0.99] transition-transform block
+              border border-gray-200 dark:border-gray-700 shadow-sm">
         {% if article.image_url %}
-            <img src="{{ article.image_url }}" class="w-full h-48 object-cover">
+            <img src="{{ article.image_url }}" class="w-full h-44 sm:h-48 object-cover">
         {% else %}
-            <div class="w-full h-48 bg-gray-700 flex items-center justify-center text-gray-500">No Image</div>
+            <div class="w-full h-44 sm:h-48 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400 text-sm">No Image</div>
         {% endif %}
-        <div class="p-4">
-            <span class="text-xs text-blue-400 bg-blue-400/10 px-2 py-1 rounded">{{ article.category }}</span>
-            <h3 dir="auto">{{ article.title }}</h3>
-            <!-- <p class="text-gray-400 mt-2 line-clamp-2">{{ article.content[:150] | safe }}...</p> -->
-            <p dir="auto">
+        <div class="p-3 sm:p-4">
+            <span class="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-400/10 px-2 py-1 rounded">{{ article.category }}</span>
+            <h3 dir="auto" class="font-semibold text-gray-900 dark:text-white mt-2 mb-1 text-sm sm:text-base leading-snug">{{ article.title }}</h3>
+            <p dir="auto" class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
                 {{ article.content | striptags | truncate(150) }}
             </p>
         </div>
