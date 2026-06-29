@@ -77,7 +77,7 @@ async def api_process_image(
 
 @router.get("/image-tools", response_class=HTMLResponse)
 async def image_tools_page(request: Request):
-    return templates.TemplateResponse("tools_image.html", {"request": request})
+    return templates.TemplateResponse( request, "tools_image.html", {"request": request})
 
 
 @router.post("/api/image/remove-bg")
