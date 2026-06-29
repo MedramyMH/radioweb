@@ -45,7 +45,7 @@ async def news_detail(article_id: int, request: Request, db: AsyncSession = Depe
     if len(recommended) < 2:
         recommended = last_news # Fallback
         
-    return templates.TemplateResponse(request, "news_detail.html", {
+    return templates.TemplateResponse("news_detail.html", {
         "request": request, 
         "article": article, 
         "last_news": last_news, 
