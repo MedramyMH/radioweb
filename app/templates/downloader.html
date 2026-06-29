@@ -1,71 +1,102 @@
 {% extends "base.html" %}
 {% block title %}Video Editor - TunisiaHub{% endblock %}
 {% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-    
-    <!-- Main Editor Workspace -->
-    <div class="lg:col-span-3 space-y-6 ">
-        
-        <!-- Step 1: Load Video -->
-        <div class="bg-slate-100 text-slate-800 
-            p-6 rounded-xl space-y-4 
-            border border-slate-300 
-            dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600">
 
-            <h3 class="text-xl font-bold mb-4">Load Video Source</h3>
-            <div class="flex gap-4">
-                <input 
-                type="text" 
-                id="source-url" 
-                placeholder="Paste YouTube / TikTok URL here..." 
-                class="flex-1 p-3 rounded border 
-                        bg-slate-100 text-slate-800 border-slate-300 
-                        dark:bg-slate-900 dark:text-slate-100 dark:border-slate-600
-                        focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button onclick="loadFromUrl()" id="btn-load-url" class="bg-blue-600 px-6 py-3 rounded font-bold hover:bg-blue-700">Load URL</button>
-                <div class="relative">
+<!-- On mobile: single column. On lg: 3/4 + 1/4 side by side -->
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
+
+    <!-- Main Editor Workspace -->
+    <div class="lg:col-span-3 space-y-4 sm:space-y-6">
+
+        <!-- Step 1: Load Video -->
+        <div class="bg-slate-100 text-slate-800
+                    p-4 sm:p-6 rounded-xl space-y-4
+                    border border-slate-300
+                    dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600">
+
+            <h3 class="text-lg sm:text-xl font-bold">Load Video Source</h3>
+
+            <!-- URL input + button: stacked on mobile, row on sm -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <input
+                    type="text"
+                    id="source-url"
+                    placeholder="Paste YouTube / TikTok URL..."
+                    class="flex-1 p-3 rounded border text-sm
+                           bg-white text-slate-800 border-slate-300
+                           dark:bg-slate-900 dark:text-slate-100 dark:border-slate-600
+                           focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div class="flex gap-2">
+                    <button onclick="loadFromUrl()" id="btn-load-url"
+                            class="flex-1 sm:flex-none bg-blue-600 px-4 py-3 rounded font-bold text-sm hover:bg-blue-700 active:scale-95 transition-transform text-white">
+                        Load URL
+                    </button>
                     <input type="file" id="source-file" accept="video/*" class="hidden" onchange="loadFromFile()">
-                    <button onclick="document.getElementById('source-file').click()" class="bg-slate-600 px-6 py-3 rounded font-bold hover:bg-slate-500">Upload File</button>
+                    <button onclick="document.getElementById('source-file').click()"
+                            class="flex-1 sm:flex-none bg-slate-600 px-4 py-3 rounded font-bold text-sm hover:bg-slate-500 active:scale-95 transition-transform text-white">
+                        Upload File
+                    </button>
                 </div>
             </div>
-            <p id="load-status" class="text-sm text-slate-400 mt-3 hidden">Downloading/Uploading... Please wait.</p>
+
+            <p id="load-status" class="text-sm text-slate-500 dark:text-slate-400 hidden">Downloading/Uploading... Please wait.</p>
         </div>
 
-        <!-- Step 2: Editor (Hidden until video loads) -->
-        <div id="editor-workspace" class="hidden space-y-6">
-            <!-- Preview Area -->
-            <div class="bg-slate-800 p-4 rounded-xl flex items-center gap-6 ">
-                <img id="video-thumbnail" src="" class="w-64 h-36 object-cover rounded bg-slate-900">
+        <!-- Step 2: Editor workspace (hidden until video loads) -->
+        <div id="editor-workspace" class="hidden space-y-4 sm:space-y-6">
+
+            <!-- Preview: stacked on mobile, row on sm -->
+            <div class="bg-slate-200 dark:bg-slate-800 p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <img id="video-thumbnail" src=""
+                     class="w-full sm:w-48 lg:w-64 aspect-video object-cover rounded bg-slate-300 dark:bg-slate-900 flex-shrink-0">
                 <div>
-                    <h4 class="font-bold text-lg mb-2">Video Preview</h4>
-                    <p class="text-slate-400 text-sm">Duration: <span id="video-duration" class="text-white font-mono">00:00</span></p>
-                    <p class="text-slate-400 text-sm mt-1">Adjust settings on the right, then export.</p>
+                    <h4 class="font-bold text-base sm:text-lg mb-1 text-slate-800 dark:text-white">Video Preview</h4>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm">
+                        Duration: <span id="video-duration" class="text-slate-900 dark:text-white font-mono">00:00</span>
+                    </p>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Adjust settings below, then export.</p>
                 </div>
             </div>
 
-            <!-- Timeline / Slider Controls -->
-            <div class="bg-slate-800 p-6 rounded-xl space-y-6">
-                <h4 class="font-bold">Timeline & Adjustments</h4>
-                
+            <!-- Timeline & Controls -->
+            <div class="bg-slate-200 dark:bg-slate-800 p-4 sm:p-6 rounded-xl space-y-5">
+                <h4 class="font-bold text-slate-800 dark:text-slate-100">Timeline & Adjustments</h4>
+
                 <div>
-                    <label class="flex justify-between text-sm mb-2"><span>Trim Start</span><span id="val-start" class="text-blue-400">00:00</span></label>
-                    <input type="range" id="trim-start" min="0" max="100" value="0" step="0.1" oninput="updateSliderValues()" class="w-full accent-blue-500">
+                    <label class="flex justify-between text-sm mb-2 text-slate-700 dark:text-slate-300">
+                        <span>Trim Start</span>
+                        <span id="val-start" class="text-blue-500 font-mono">00:00</span>
+                    </label>
+                    <input type="range" id="trim-start" min="0" max="100" value="0" step="0.1"
+                           oninput="updateSliderValues()"
+                           class="w-full accent-blue-500 h-2">
                 </div>
 
                 <div>
-                    <label class="flex justify-between text-sm mb-2"><span>Trim End</span><span id="val-end" class="text-blue-400">00:00</span></label>
-                    <input type="range" id="trim-end" min="0" max="100" value="100" step="0.1" oninput="updateSliderValues()" class="w-full accent-blue-500">
+                    <label class="flex justify-between text-sm mb-2 text-slate-700 dark:text-slate-300">
+                        <span>Trim End</span>
+                        <span id="val-end" class="text-blue-500 font-mono">00:00</span>
+                    </label>
+                    <input type="range" id="trim-end" min="0" max="100" value="100" step="0.1"
+                           oninput="updateSliderValues()"
+                           class="w-full accent-blue-500 h-2">
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <!-- Volume + Speed: 1 col mobile, 2 cols sm -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="text-sm mb-1 block">Volume (1.0 = Normal)</label>
-                        <input type="number" id="volume" value="1.0" step="0.1" min="0" max="5" class="w-full bg-slate-900 p-2 rounded border border-slate-600">
+                        <label class="text-sm mb-1 block text-slate-700 dark:text-slate-300">Volume (1.0 = Normal)</label>
+                        <input type="number" id="volume" value="1.0" step="0.1" min="0" max="5"
+                               class="w-full bg-white dark:bg-slate-900 p-2 rounded border
+                                      border-slate-300 dark:border-slate-600
+                                      text-slate-800 dark:text-slate-100 text-sm">
                     </div>
                     <div>
-                        <label class="text-sm mb-1 block">Speed (1.0 = Normal)</label>
-                        <select id="speed" class="w-full bg-slate-900 p-2 rounded border border-slate-600">
+                        <label class="text-sm mb-1 block text-slate-700 dark:text-slate-300">Speed (1.0 = Normal)</label>
+                        <select id="speed"
+                                class="w-full bg-white dark:bg-slate-900 p-2 rounded border
+                                       border-slate-300 dark:border-slate-600
+                                       text-slate-800 dark:text-slate-100 text-sm">
                             <option value="0.5">0.5x (Slow)</option>
                             <option value="1.0" selected>1.0x (Normal)</option>
                             <option value="1.5">1.5x</option>
@@ -74,23 +105,29 @@
                     </div>
                 </div>
 
-                <button onclick="exportVideo()" id="btn-export" class="w-full bg-purple-600 p-4 rounded font-bold text-lg hover:bg-purple-700">
+                <button onclick="exportVideo()" id="btn-export"
+                        class="w-full bg-purple-600 p-3 sm:p-4 rounded font-bold text-base sm:text-lg
+                               hover:bg-purple-700 active:scale-95 transition-transform text-white">
                     🚀 Export Edited Video
                 </button>
-                <p id="export-status" class="text-sm text-slate-400 text-center hidden">Rendering via FFmpeg... This will take a few minutes.</p>
+                <p id="export-status" class="text-sm text-slate-400 text-center hidden">
+                    Rendering via FFmpeg... This will take a few minutes.
+                </p>
             </div>
         </div>
     </div>
 
-    <!-- Right Sidebar (Ads & Info) -->
-    <div class="space-y-6">
-        <div class="bg-slate-800 p-4 text-center min-h-[250px] flex flex-col items-center justify-center text-slate-500 border border-dashed border-slate-600 rounded-xl">
-            <p>Google AdSense</p>
-            <p class="text-xs mt-2">Sidebar Ad Block</p>
+    <!-- Ad sidebar: horizontal row on mobile, vertical column on lg -->
+    <div class="flex flex-row lg:flex-col gap-4 lg:space-y-0">
+        <div class="flex-1 lg:flex-none bg-slate-100 dark:bg-slate-800 p-4 text-center
+                    min-h-[100px] lg:min-h-[250px] flex flex-col items-center justify-center
+                    text-slate-400 border border-dashed border-slate-400 dark:border-slate-600 rounded-xl text-sm">
+            Google AdSense
         </div>
-        <div class="bg-slate-800 p-4 text-center min-h-[250px] flex flex-col items-center justify-center text-slate-500 border border-dashed border-slate-600 rounded-xl">
-            <p>Google AdSense</p>
-            <p class="text-xs mt-2">Sidebar Ad Block 2</p>
+        <div class="flex-1 lg:flex-none bg-slate-100 dark:bg-slate-800 p-4 text-center
+                    min-h-[100px] lg:min-h-[250px] flex flex-col items-center justify-center
+                    text-slate-400 border border-dashed border-slate-400 dark:border-slate-600 rounded-xl text-sm">
+            Google AdSense
         </div>
     </div>
 
@@ -108,78 +145,77 @@
 
     async function loadFromUrl() {
         const url = document.getElementById('source-url').value;
-        if(!url) return alert("Enter URL");
+        if (!url) return alert("Enter a URL");
         const status = document.getElementById('load-status');
-        status.classList.remove('hidden'); status.innerText = "Fetching video from URL... (This takes time)";
-        
-        const fd = new FormData(); fd.append('url', url);
+        status.classList.remove('hidden');
+        status.innerText = "Fetching video from URL... (This takes time)";
+        const fd = new FormData();
+        fd.append('url', url);
         try {
             const res = await fetch('/api/editor/load', { method: 'POST', body: fd });
-            if(!res.ok) throw new Error(await res.text());
-            const data = await res.json();
-            initEditorWorkspace(data);
+            if (!res.ok) throw new Error(await res.text());
+            initEditorWorkspace(await res.json());
         } catch(e) { status.innerText = "Error: " + e.message; }
     }
 
     async function loadFromFile() {
         const file = document.getElementById('source-file').files[0];
-        if(!file) return;
+        if (!file) return;
         const status = document.getElementById('load-status');
-        status.classList.remove('hidden'); status.innerText = "Uploading local file...";
-        
-        const fd = new FormData(); fd.append('file', file);
+        status.classList.remove('hidden');
+        status.innerText = "Uploading local file...";
+        const fd = new FormData();
+        fd.append('file', file);
         try {
             const res = await fetch('/api/editor/load', { method: 'POST', body: fd });
-            if(!res.ok) throw new Error(await res.text());
-            const data = await res.json();
-            initEditorWorkspace(data);
+            if (!res.ok) throw new Error(await res.text());
+            initEditorWorkspace(await res.json());
         } catch(e) { status.innerText = "Error: " + e.message; }
     }
 
     function initEditorWorkspace(data) {
         currentJobId = data.job_id;
         maxDuration = data.duration;
-        
         document.getElementById('video-thumbnail').src = data.thumbnail;
         document.getElementById('video-duration').innerText = formatTime(maxDuration);
-        
         const startSlider = document.getElementById('trim-start');
         const endSlider = document.getElementById('trim-end');
         startSlider.max = maxDuration; startSlider.value = 0;
         endSlider.max = maxDuration; endSlider.value = maxDuration;
-        
         document.getElementById('editor-workspace').classList.remove('hidden');
         document.getElementById('load-status').innerText = "Video loaded successfully!";
+        // Scroll to editor on mobile
+        if (window.innerWidth < 1024) {
+            document.getElementById('editor-workspace').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         updateSliderValues();
     }
 
     function updateSliderValues() {
-        const start = parseFloat(document.getElementById('trim-start').value);
-        const end = parseFloat(document.getElementById('trim-end').value);
-        document.getElementById('val-start').innerText = formatTime(start);
-        document.getElementById('val-end').innerText = formatTime(end);
+        document.getElementById('val-start').innerText = formatTime(parseFloat(document.getElementById('trim-start').value));
+        document.getElementById('val-end').innerText   = formatTime(parseFloat(document.getElementById('trim-end').value));
     }
 
     async function exportVideo() {
-        if(!currentJobId) return;
+        if (!currentJobId) return;
         const btn = document.getElementById('btn-export');
         const status = document.getElementById('export-status');
-        btn.disabled = true; status.classList.remove('hidden'); status.innerText = "Rendering...";
-
+        btn.disabled = true;
+        status.classList.remove('hidden');
+        status.innerText = "Rendering...";
         const fd = new FormData();
         fd.append('job_id', currentJobId);
         fd.append('start_time', document.getElementById('trim-start').value);
         fd.append('end_time', document.getElementById('trim-end').value);
         fd.append('volume', document.getElementById('volume').value);
         fd.append('speed', document.getElementById('speed').value);
-
         try {
             const res = await fetch('/api/editor/export', { method: 'POST', body: fd });
-            if(!res.ok) throw new Error(await res.text());
+            if (!res.ok) throw new Error(await res.text());
             const blob = await res.blob();
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob); 
-            a.download = `edited_${currentJobId}.mp4`; 
+            a.href = URL.createObjectURL(blob);
+            a.download = `edited_${currentJobId}.mp4`;
             a.click();
             status.innerText = "Done! File downloaded.";
         } catch(e) { status.innerText = "Error: " + e.message; }
