@@ -9,7 +9,7 @@ from app.routes import radio, news, downloader, transcription, admin, auth_route
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()   # FIX: was missing await — tables were never created
+    await init_db()
     yield
 
 # FIX: Only ONE app instance. Previously two were created; the second one
