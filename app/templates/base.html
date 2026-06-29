@@ -3,10 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <meta name="theme-color" content="#2563eb">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>{% block title %}TunisiaHub{% endblock %}</title>
 
     <!-- FIX: Dark mode script MUST be in <head> BEFORE Tailwind to prevent white flash -->
@@ -30,52 +26,13 @@
         }
     </script>
     <style>
-      /* Smooth theme transitions — color only, not layout */
-      body, aside, nav a, button, input, select, div {
-          transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
-      }
-      
-      /* Mobile-specific improvements */
-      @media (max-width: 768px) {
-          body {
-              overflow: hidden;
-          }
-          
-          #app-content {
-              padding-bottom: 140px !important;
-          }
- 
-          input, select, textarea {
-              font-size: 16px !important; /* Prevents zoom on iOS */
-              min-height: 44px; /* Touch-friendly */
-          }
- 
-          button {
-              min-height: 44px; /* Touch-friendly */
-          }
- 
-          #global-player {
-              left: 0 !important;
-              height: auto;
-              bottom: 0;
-          }
-      }
- 
-      /* Safe area insets for notched devices */
-      @supports (padding: max(0px)) {
-          body {
-              padding-left: max(0px, env(safe-area-inset-left));
-              padding-right: max(0px, env(safe-area-inset-right));
-          }
- 
-          #app-content {
-              padding-bottom: max(140px, calc(28px   env(safe-area-inset-bottom))) !important;
-          }
-      }
-  </style>
+        /* Smooth theme transitions — color only, not layout */
+        body, aside, nav a, button, input, select, div {
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+        }
+    </style>
 </head>
-
-<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white flex flex-col md:flex-row h-screen overflow-hidden">
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white flex h-screen overflow-hidden">
 
     <aside class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col justify-between p-4 flex-shrink-0 z-40 shadow-sm">
         <div>
@@ -159,7 +116,7 @@
         requestAnimationFrame(() => { requestAnimationFrame(updateToggleUI); });
 
         // =====================================================
-        // AJAX NAVIGATION — with module script   link support
+        // AJAX NAVIGATION — with module script + link support
         // =====================================================
         const appContent = document.getElementById('app-content');
         const audio = document.getElementById('global-audio');
@@ -210,13 +167,13 @@
                         if (old.src) {
                             s.src = old.src;
                             s.async = false;
-                            s.onload = () => runNext(i   1);
-                            s.onerror = () => runNext(i   1);
+                            s.onload = () => runNext(i + 1);
+                            s.onerror = () => runNext(i + 1);
                             appContent.appendChild(s);
                         } else {
                             s.textContent = old.textContent;
                             appContent.appendChild(s);
-                            runNext(i   1);
+                            runNext(i + 1);
                         }
                     };
                     runNext(0);
