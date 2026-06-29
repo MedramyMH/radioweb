@@ -1,159 +1,46 @@
 {% extends "base.html" %}
-{% block title %}{% if type == 'register' %}Register{% else %}Login{% endif %} - TunisiaHub{% endblock %}
+{% block title %}{% if type == 'login' %}Login{% else %}Register{% endif %}{% endblock %}
 {% block content %}
-<div class="min-h-screen flex items-center justify-center px-4 md:px-6">
-    <div class="w-full max-w-md">
-        <!-- Logo/Header -->
-        <div class="text-center mb-8 md:mb-10">
-            <h1 class="text-4xl md:text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2">🇹🇳</h1>
-            <h2 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">TunisiaHub</h2>
-            <p class="text-gray-600 dark:text-gray-400 text-sm md:text-base mt-2">
-                {% if type == 'register' %}
-                    Create Your Account
-                {% else %}
-                    Welcome Back
-                {% endif %}
-            </p>
+<div class="max-w-md mx-auto mt-20 bg-gray-800 p-8 rounded-xl">
+    <h2 class="text-2xl font-bold mb-6 text-center">
+        {% if type == 'login' %}👤 Login{% else %}📝 Register{% endif %}
+    </h2>
+    
+    {% if error %}
+        <div class="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded mb-4 text-sm">
+            {{ error }}
         </div>
+    {% endif %}
 
-        <!-- Form Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl md:rounded-2xl p-6 md:p-8 shadow-lg">
-            {% if error %}
-                <div class="mb-6 p-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-lg text-sm md:text-base border border-red-300 dark:border-red-700">
-                    ⚠️ {{ error }}
-                </div>
-            {% endif %}
-
-            <form method="POST" class="space-y-4 md:space-y-6">
-                <!-- Username Field -->
-                <div>
-                    <label for="username" class="block text-sm md:text-base font-bold text-gray-800 dark:text-gray-200 mb-2">
-                        Username
-                    </label>
-                    <input 
-                        type="text" 
-                        id="username" 
-                        name="username" 
-                        placeholder="Enter your username"
-                        value="{{ username or '' }}"
-                        required
-                        class="w-full px-4 py-2 md:py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base md:text-base"
-                    >
-                </div>
-
-                <!-- Password Field -->
-                <div>
-                    <label for="password" class="block text-sm md:text-base font-bold text-gray-800 dark:text-gray-200 mb-2">
-                        Password
-                    </label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        name="password" 
-                        placeholder="Enter your password"
-                        required
-                        class="w-full px-4 py-2 md:py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base md:text-base"
-                    >
-                </div>
-
-                <!-- Password Confirmation (Register only) -->
-                {% if type == 'register' %}
-                <div>
-                    <label for="password_confirm" class="block text-sm md:text-base font-bold text-gray-800 dark:text-gray-200 mb-2">
-                        Confirm Password
-                    </label>
-                    <input 
-                        type="password" 
-                        id="password_confirm" 
-                        name="password_confirm" 
-                        placeholder="Confirm your password"
-                        required
-                        class="w-full px-4 py-2 md:py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base md:text-base"
-                    >
-                </div>
-                {% endif %}
-
-                <!-- Remember Me (Login only) -->
-                {% if type != 'register' %}
-                <div class="flex items-center">
-                    <input 
-                        type="checkbox" 
-                        id="remember" 
-                        name="remember" 
-                        class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                    >
-                    <label for="remember" class="ml-2 text-sm md:text-base text-gray-700 dark:text-gray-300 cursor-pointer">
-                        Remember me
-                    </label>
-                </div>
-                {% endif %}
-
-                <!-- Submit Button -->
-                <button 
-                    type="submit" 
-                    class="w-full py-2 md:py-3 mt-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-lg transition-all duration-200 text-base md:text-base min-h-11"
-                >
-                    {% if type == 'register' %}
-                        Create Account
-                    {% else %}
-                        Sign In
-                    {% endif %}
-                </button>
-
-                <!-- Divider -->
-                <div class="relative my-6 md:my-8">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
-                    </div>
-                    <div class="relative flex justify-center text-sm md:text-base">
-                        <span class="px-2 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400">OR</span>
-                    </div>
-                </div>
-
-                <!-- Toggle Link -->
-                <p class="text-center text-sm md:text-base text-gray-600 dark:text-gray-400">
-                    {% if type == 'register' %}
-                        Already have an account?
-                        <a href="/auth/login" data-nav class="text-blue-600 dark:text-blue-400 font-bold hover:underline">
-                            Sign In
-                        </a>
-                    {% else %}
-                        Don't have an account?
-                        <a href="/auth/register" data-nav class="text-blue-600 dark:text-blue-400 font-bold hover:underline">
-                            Create One
-                        </a>
-                    {% endif %}
-                </p>
-            </form>
+    <!-- Force standard form submit (no data-nav) to process cookies correctly -->
+    <form method="POST" action="/auth/{{ type }}" class="space-y-4">
+        <div>
+            <label class="block text-sm mb-1">Username</label>
+            <input type="text" name="username" required value="{{ username|default('', true) }}" class="w-full bg-gray-900 p-3 rounded border border-gray-700 focus:border-blue-500 outline-none">
         </div>
-
-        <!-- Info Section -->
-        <div class="mt-6 md:mt-8 p-4 md:p-6 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-center border border-blue-200 dark:border-blue-800">
-            <h3 class="font-bold text-gray-900 dark:text-white mb-2 text-sm md:text-base">🔒 Your Privacy Matters</h3>
-            <p class="text-gray-700 dark:text-gray-300 text-xs md:text-sm">
-                Your data is encrypted and secured. We never share your information with third parties.
-            </p>
+        <div>
+            <label class="block text-sm mb-1">Password</label>
+            <input type="password" name="password" required class="w-full bg-gray-900 p-3 rounded border border-gray-700 focus:border-blue-500 outline-none">
         </div>
-
-        <!-- Back to Home -->
-        <div class="mt-4 md:mt-6 text-center">
-            <a href="/" data-nav class="text-blue-600 dark:text-blue-400 hover:underline text-sm md:text-base font-medium">
-                ← Back to Home
-            </a>
+        
+        {% if type == 'register' %}
+        <div class="flex items-center gap-2">
+            <input type="checkbox" name="is_admin" value="true" id="admin-check" class="w-4 h-4">
+            <label for="admin-check" class="text-sm text-gray-400">Make me Admin</label>
         </div>
-    </div>
+        {% endif %}
+
+        <button type="submit" class="w-full bg-blue-600 p-3 rounded font-bold hover:bg-blue-700 transition">
+            {% if type == 'login' %}Sign In{% else %}Create Account{% endif %}
+        </button>
+    </form>
+    
+    <p class="text-center text-sm text-gray-400 mt-6">
+        {% if type == 'login' %}
+            Don't have an account? <a href="/auth/register" data-nav class="text-blue-400 hover:underline">Register</a>
+        {% else %}
+            Already have an account? <a href="/auth/login" data-nav class="text-blue-400 hover:underline">Login</a>
+        {% endif %}
+    </p>
 </div>
-
-<style>
-    /* Input focus styling */
-    input:focus {
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    /* Password strength indicator (optional) */
-    #password {
-        background-image: 
-            linear-gradient(to right, transparent 0%, transparent calc(100% - 30px), #f3f4f6 calc(100% - 30px), #f3f4f6 100%);
-    }
-</style>
 {% endblock %}
