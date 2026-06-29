@@ -38,7 +38,7 @@ async def admin_dashboard(
 
     result = await db.execute(stmt)
 
-    return templates.TemplateResponse(
+    return templates.TemplateResponse(request,
         "admin_dashboard.html",
         {
             "request": request,
@@ -119,7 +119,7 @@ async def edit_article(
     if not article:
         return RedirectResponse("/admin/", status_code=303)
 
-    return templates.TemplateResponse(
+    return templates.TemplateResponse(request,
         "edit_article.html",
         {
             "request": request,
