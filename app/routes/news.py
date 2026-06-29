@@ -20,7 +20,7 @@ async def news_page(request: Request, category: str = None, page: int = 1, db: A
         
     result = await db.execute(stmt)
     articles = result.scalars().all()
-    return templates.TemplateResponse("news.html", {"articles": articles, "category": category})
+    return templates.TemplateResponse(request, "news.html", {"articles": articles, "category": category})
 
 @router.get("/news/{article_id}", response_class=HTMLResponse)
 async def news_detail(article_id: int, request: Request, db: AsyncSession = Depends(get_db)):
@@ -45,7 +45,7 @@ async def news_detail(article_id: int, request: Request, db: AsyncSession = Depe
     if len(recommended) < 2:
         recommended = last_news # Fallback
         
-    return templates.TemplateResponse("news_detail.html", {
+    return templates.TemplateResponse(request, "news_detail.html", {
         "request": request, 
         "article": article, 
         "last_news": last_news, 
