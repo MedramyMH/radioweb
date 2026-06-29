@@ -185,7 +185,7 @@ async def download_audio_from_url(
 @router.get("/transcription", response_class=HTMLResponse)
 async def transcription_page(request: Request):
     """Serve the transcription UI page."""
-    return templates.TemplateResponse("transcription.html", {"request": request})
+    return templates.TemplateResponse(request, "transcription.html")
 
 @router.post("/api/transcribe")
 async def api_transcribe(
