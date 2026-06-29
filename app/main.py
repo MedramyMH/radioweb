@@ -12,8 +12,6 @@ async def lifespan(app: FastAPI):
     await init_db()
     yield
 
-# FIX: Only ONE app instance. Previously two were created; the second one
-# overwrote the first, losing the middleware, static mount, and all routers.
 app = FastAPI(lifespan=lifespan)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -34,9 +32,7 @@ app.include_router(transcription.router, tags=["Transcription"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 app.include_router(tools.router, tags=["Tools"])
 
-
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse(request=request, name="home.html")
-
 
