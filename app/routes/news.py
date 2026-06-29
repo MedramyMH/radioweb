@@ -20,7 +20,7 @@ async def news_page(request: Request, category: str = None, page: int = 1, db: A
         
     result = await db.execute(stmt)
     articles = result.scalars().all()
-    return templates.TemplateResponse(request, "news.html", {"articles": articles, "category": category})
+    return templates.TemplateResponse("news.html", {"articles": articles, "category": category})
 
 @router.get("/news/{article_id}", response_class=HTMLResponse)
 async def news_detail(article_id: int, request: Request, db: AsyncSession = Depends(get_db)):
