@@ -2,7 +2,16 @@ import os, uuid, json
 from pathlib import Path
 import subprocess
 import yt_dlp
-from moviepy.editor import VideoFileClip, AudioFileClip
+import moviepy
+try:
+    from moviepy.editor import VideoFileClip, AudioFileClip
+except (ImportError, AttributeError):
+    try:
+        from moviepy.video.io.VideoFileClip import VideoFileClip
+        from moviepy.audio.io.AudioFileClip import AudioFileClip
+    except ImportError:
+        from moviepy import VideoFileClip, AudioFileClip
+
 
 TEMP_DIR = Path("/tmp/media")
 TEMP_DIR.mkdir(parents=True, exist_ok=True)
