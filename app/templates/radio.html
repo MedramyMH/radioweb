@@ -1,68 +1,79 @@
 {% extends "base.html" %}
 {% block title %}Radio - TunisiaHub{% endblock %}
 {% block content %}
-<div class="flex justify-between items-center mb-6">
-    <h2 class="text-3xl font-bold">📻 Web Radio</h2>
-    <div class="flex gap-2">
-    {% if user %}
-        <a href="/radio?show_favs=true" data-nav 
-           class="px-4 py-2 rounded 
-                  {% if show_favs %}
-                      bg-yellow-500 text-white dark:bg-yellow-600
-                  {% else %}
+
+<!-- Header: title + search stacked on mobile, row on desktop -->
+<div class="mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h2 class="text-2xl sm:text-3xl font-bold">📻 Web Radio</h2>
+
+        {% if user %}
+        <div class="flex gap-2">
+            <a href="/radio?show_favs=true" data-nav
+               class="flex-1 sm:flex-none text-center px-4 py-2 rounded text-sm font-medium
+                      {% if show_favs %}
+                          bg-yellow-500 text-white dark:bg-yellow-600
+                      {% else %}
+                          bg-gray-100 text-gray-800 hover:bg-gray-200
+                          dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700
+                      {% endif %}">
+                ❤️ Favorites
+            </a>
+            <a href="/radio" data-nav
+               class="flex-1 sm:flex-none text-center px-4 py-2 rounded text-sm font-medium
                       bg-gray-100 text-gray-800 hover:bg-gray-200
-                      dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700
-                  {% endif %}">
-            ❤️ My Favorites
-        </a>
+                      dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">
+                All
+            </a>
+        </div>
+        {% endif %}
+    </div>
 
-        <a href="/radio" data-nav 
-           class="px-4 py-2 rounded 
-                  bg-gray-100 text-gray-800 hover:bg-gray-200
-                  dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">
-            All Stations
-        </a>
-    {% endif %}
-
+    <!-- Search bar: full width on mobile -->
     <form class="flex gap-2">
-        <input 
-            type="text" 
-            name="q" 
-            placeholder="Search..." 
-            value="{{ request.query_params.get('q', '') }}" 
-            class="px-4 py-2 rounded border 
-                   bg-gray-100 text-gray-800 border-gray-300
-                   placeholder-gray-500
-                   dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:placeholder-gray-400"
-        >
-
-        <button 
-            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        <input
+            type="text"
+            name="q"
+            placeholder="Search stations..."
+            value="{{ request.query_params.get('q', '') }}"
+            class="flex-1 px-3 py-2 rounded border text-sm
+                   bg-gray-100 text-gray-800 border-gray-300 placeholder-gray-500
+                   dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:placeholder-gray-400">
+        <button class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 flex-shrink-0">
             Search
         </button>
     </form>
 </div>
-</div>
 
-<div class="grid grid-cols-3 gap-4">
+<!-- Grid: 1 col on mobile, 2 on sm, 3 on lg -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
     {% for station in stations %}
-    <div class="bg-gray-100 hover:bg-gray-200 
-            dark:bg-gray-800 dark:hover:bg-gray-700 
-            p-4 rounded-lg transition relative group">
+    <div class="bg-gray-100 hover:bg-gray-200
+            dark:bg-gray-800 dark:hover:bg-gray-700
+            p-3 sm:p-4 rounded-lg transition relative group">
+
         <div class="cursor-pointer" onclick="playGlobalRadio('{{ station.url_resolved }}', '{{ station.name }}', '{{ station.favicon }}')">
             <div class="flex items-center gap-3">
-                <!-- <img src="{{ station.favicon or '' }}" onerror="this.src='https://w7.pngwing.com/pngs/582/312/png-transparent-radio-icon-radio-television-electronics-text-thumbnail.png'" class="w-10 h-10 rounded bg-gray-700"> -->
-                <img src="{{ station.favicon or '' }}" onerror="this.src='https://w7.pngwing.com/pngs/582/312/png-transparent-radio-icon-radio-television-electronics-text-thumbnail.png'" class="w-10 h-10 rounded bg-gray-700">
-                <div class="overflow-hidden">
-                    <h3 class="font-semibold truncate">{{ station.name }}</h3>
-                    <p class="text-sm text-gray-400 truncate">{{ station.tags or 'Radio' }}</p>
+                <img src="{{ station.favicon or '' }}"
+                     onerror="this.src='https://w7.pngwing.com/pngs/582/312/png-transparent-radio-icon-radio-television-electronics-text-thumbnail.png'"
+                     class="w-12 h-12 rounded bg-gray-700 flex-shrink-0 object-cover">
+                <div class="overflow-hidden flex-1 min-w-0">
+                    <h3 class="font-semibold truncate text-sm sm:text-base">{{ station.name }}</h3>
+                    <p class="text-xs text-gray-400 truncate">{{ station.tags or 'Radio' }}</p>
+                </div>
+                <!-- Play hint icon always visible on mobile (no hover) -->
+                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600/10 flex items-center justify-center sm:hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                 </div>
             </div>
         </div>
-        
+
         {% if user %}
+        <!-- Fav button: always visible on mobile, hover-only on desktop -->
         <button onclick="event.stopPropagation(); toggleFav(this, '{{ station.stationuuid }}', '{{ station.name }}', '{{ station.url_resolved }}', '{{ station.favicon }}')"
-            class="absolute top-2 right-2 text-xl opacity-0 group-hover:opacity-100 transition {% if show_favs %}text-red-500 opacity-100{% else %}text-gray-500 hover:text-red-500{% endif %}">
+            class="absolute top-2 right-2 text-xl sm:opacity-0 sm:group-hover:opacity-100 transition-opacity
+                   {% if show_favs %}text-red-500 opacity-100{% else %}text-gray-400 hover:text-red-500{% endif %}
+                   w-8 h-8 flex items-center justify-center rounded-full">
             {% if show_favs %}❤️{% else %}🤍{% endif %}
         </button>
         {% endif %}
@@ -75,12 +86,11 @@
         const isFav = btn.innerText.trim() === '❤️';
         const fd = new FormData();
         fd.append('uuid', uuid); fd.append('name', name); fd.append('url', url); fd.append('favicon', favicon);
-        
         const res = await fetch(`/api/favorites/${isFav ? 'remove' : 'add'}`, { method: 'POST', body: fd });
         if (res.ok) {
             btn.innerText = isFav ? '🤍' : '❤️';
             btn.classList.toggle('text-red-500', !isFav);
-            btn.classList.toggle('text-gray-500', isFav);
+            btn.classList.toggle('text-gray-400', isFav);
         }
     }
 </script>
