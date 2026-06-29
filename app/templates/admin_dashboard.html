@@ -2,67 +2,65 @@
 {% block title %}Admin Panel - TunisiaHub{% endblock %}
 {% block content %}
 <div class="max-w-6xl mx-auto">
-    <h2 class="text-3xl font-bold mb-8">⚙️ Admin Dashboard</h2>
+    <h2 class="text-2xl sm:text-3xl font-bold mb-6">⚙️ Admin Dashboard</h2>
 
-    <!-- TOP: Existing Articles -->
-    <div class="bg-gray-800 p-6 rounded-xl mb-8">
-        <h3 class="text-xl font-bold mb-4">📰 Existing Articles</h3>
+    <!-- Existing Articles -->
+    <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl mb-6 border border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg sm:text-xl font-bold mb-4">📰 Existing Articles</h3>
         {% if not articles %}
             <p class="text-gray-400">No articles yet. Add your first one below!</p>
         {% else %}
             <div class="space-y-3">
                 {% for article in articles %}
-                <div class="flex justify-between items-center bg-gray-900 p-4 rounded-lg border border-gray-700">
-                    <div class="flex-1 flex items-center gap-4">
+                <!-- Stack vertically on mobile, row on sm -->
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 bg-gray-50 dark:bg-gray-900 p-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
                         {% if article.image_url %}
-                            <img src="{{ article.image_url }}" class="w-16 h-16 object-cover rounded">
+                            <img src="{{ article.image_url }}" class="w-14 h-14 object-cover rounded flex-shrink-0">
                         {% endif %}
-                        <div>
-                            <h4 class="font-bold text-white">{{ article.title }}</h4>
-                            <span class="text-xs bg-blue-900 text-blue-300 px-2 py-0.5 rounded">{{ article.category }}</span>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-gray-900 dark:text-white text-sm sm:text-base truncate">{{ article.title }}</h4>
+                            <span class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">{{ article.category }}</span>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <!-- Modify Button -->
+                    <!-- Buttons full-width on mobile -->
+                    <div class="flex gap-2 sm:flex-shrink-0">
                         <a href="/admin/edit/{{ article.id }}"
-                        class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white text-sm font-semibold">
+                           class="flex-1 sm:flex-none text-center px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white text-sm font-semibold">
                             Modify
                         </a>
-
-                        <!-- Delete Button -->
-                        <form action="/admin/delete/{{ article.id }}"
-                            method="POST"
-                            onsubmit="return confirm('Delete this article?');">
+                        <form action="/admin/delete/{{ article.id }}" method="POST"
+                              onsubmit="return confirm('Delete this article?');" class="flex-1 sm:flex-none">
                             <button type="submit"
-                                    class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-white text-sm font-semibold">
+                                    class="w-full px-3 py-2 bg-red-600 hover:bg-red-700 rounded text-white text-sm font-semibold">
                                 Delete
                             </button>
                         </form>
                     </div>
-                    <!-- <form action="/admin/delete/{{ article.id }}" method="POST" onsubmit="return confirm('Delete this article?');">
-                        <button type="submit" class="text-red-400 hover:text-red-300 font-bold">Delete</button>
-                    </form> -->
                 </div>
                 {% endfor %}
             </div>
         {% endif %}
     </div>
 
-    <!-- BOTTOM: Add Article Form -->
-    <!-- mb-24 keeps it above the radio player! -->
-    <div class="bg-gray-800 p-6 rounded-xl mb-24">
-        <h3 class="text-xl font-bold mb-4">➕ Add New Article</h3>
-        
+    <!-- Add Article Form -->
+    <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl mb-32 border border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg sm:text-xl font-bold mb-4">➕ Add New Article</h3>
+
         <form id="article-form" method="POST" action="/admin/create" enctype="multipart/form-data" class="space-y-4">
-            <input type="text" name="title" placeholder="Article Title" required class="w-full bg-gray-900 p-3 rounded border border-gray-700 text-white">
-            
+            <input type="text" name="title" placeholder="Article Title" required
+                   class="w-full bg-gray-50 dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm">
+
             <div>
-                <label class="block text-sm mb-1 text-gray-300">Cover Image (Optional)</label>
-                <input type="file" name="image" accept="image/*" class="w-full bg-gray-900 p-2 rounded border border-gray-700 text-white">
+                <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300 font-medium">Cover Image (Optional)</label>
+                <input type="file" name="image" accept="image/*"
+                       class="w-full bg-gray-50 dark:bg-gray-900 p-2 rounded border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm">
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <select name="category" required class="bg-gray-900 p-3 rounded border border-gray-700 text-white">
+            <!-- Stack on mobile, 2 cols on sm -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <select name="category" required
+                        class="bg-gray-50 dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm">
                     <option value="Politics">Politics</option>
                     <option value="Economy">Economy</option>
                     <option value="Tech">Tech</option>
@@ -72,32 +70,30 @@
                     <option value="Health">Health</option>
                     <option value="Education">Education</option>
                 </select>
-                <input type="text" name="meta_description" placeholder="SEO Meta Description" class="bg-gray-900 p-3 rounded border border-gray-700 text-white">
+                <input type="text" name="meta_description" placeholder="SEO Meta Description"
+                       class="bg-gray-50 dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm">
             </div>
 
             <label class="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" name="is_featured" class="w-4 h-4">
-                <span class="text-sm text-gray-300">Mark as Featured</span>
+                <span class="text-sm text-gray-600 dark:text-gray-300">Mark as Featured</span>
             </label>
 
-            <!-- Quill Rich Text Editor -->
-            <div id="quill-editor" class="bg-white rounded-lg text-black" style="height: 300px;"></div>
-            
-            <!-- Hidden Textarea to store the HTML -->
+            <!-- Quill editor — shorter on mobile -->
+            <div id="quill-editor" class="bg-white rounded-lg text-black" style="height: 250px;"></div>
             <textarea id="editor" name="content" class="hidden"></textarea>
-            
-            <button type="submit" class="w-full bg-green-600 px-8 py-4 rounded-lg font-bold hover:bg-green-700 transition text-white text-lg">
+
+            <button type="submit"
+                    class="w-full bg-green-600 px-6 py-3 sm:py-4 rounded-lg font-bold hover:bg-green-700 transition text-white text-base sm:text-lg">
                 PUBLISH ARTICLE
             </button>
         </form>
     </div>
 </div>
 
-<!-- Quill JS CDN (No API key needed) -->
 <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
-    // Initialize Quill editor
     const quill = new Quill('#quill-editor', {
         theme: 'snow',
         placeholder: 'Write your article content here...',
@@ -116,11 +112,10 @@
             ]
         }
     });
-    
+
     quill.format('direction', 'rtl');
     quill.format('align', 'right');
 
-    // Handle uploading images inside the text body
     quill.getModule('toolbar').addHandler('image', function() {
         const input = document.createElement('input');
         input.setAttribute('type', 'file');
@@ -140,7 +135,6 @@
         };
     });
 
-    // Grab HTML from Quill and put it in the hidden textarea before submitting
     const form = document.getElementById('article-form');
     form.addEventListener('submit', function(e) {
         const content = document.querySelector('#editor');
