@@ -42,6 +42,77 @@
             <p id="load-status" class="text-sm text-slate-500 dark:text-slate-400 hidden">Fetching available formats...</p>
         </div>
 
+        <!-- Authentication Help Modal (hidden until needed) -->
+        <div id="auth-help-modal" class="hidden bg-red-50 text-slate-800 
+                    p-4 sm:p-6 rounded-xl space-y-4
+                    border border-red-300
+                    dark:bg-red-900 dark:text-slate-100 dark:border-red-600">
+            
+            <div class="flex justify-between items-start">
+                <h3 class="text-lg sm:text-xl font-bold flex items-center gap-2">
+                    <span>🔒</span> Authentication Required
+                </h3>
+                <button onclick="document.getElementById('auth-help-modal').classList.add('hidden')"
+                        class="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">✕</button>
+            </div>
+
+            <p class="text-sm">YouTube requires authentication for many videos. Choose one of the solutions below:</p>
+
+            <!-- Solution 1: Browser Cookie Extraction -->
+            <div class="space-y-3 bg-white dark:bg-slate-800 p-4 rounded border border-blue-200 dark:border-blue-600">
+                <h4 class="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                    <span>⭐</span> Solution 1: Auto Extract Cookies (Easiest)
+                </h4>
+                <ol class="text-sm space-y-2 list-decimal list-inside text-slate-600 dark:text-slate-300">
+                    <li>Install dependency: <code class="bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded text-xs">pip install browser-cookie3</code></li>
+                    <li>Make sure you're logged into YouTube in your browser</li>
+                    <li>Click the button below</li>
+                </ol>
+                <button onclick="extractCookies()" id="btn-extract-cookies"
+                        class="w-full bg-blue-600 px-4 py-2 rounded font-bold text-sm hover:bg-blue-700 text-white">
+                    🔑 Extract Cookies from Browser
+                </button>
+                <p id="cookie-status" class="text-xs text-slate-500 dark:text-slate-400 hidden"></p>
+            </div>
+
+            <!-- Solution 2: Manual Export -->
+            <div class="space-y-3 bg-white dark:bg-slate-800 p-4 rounded border border-yellow-200 dark:border-yellow-600">
+                <h4 class="font-bold text-yellow-600 dark:text-yellow-400 flex items-center gap-2">
+                    <span>📋</span> Solution 2: Manual Cookie Export
+                </h4>
+                <ol class="text-sm space-y-2 list-decimal list-inside text-slate-600 dark:text-slate-300">
+                    <li>Install Chrome extension: <strong>EditThisCookie</strong></li>
+                    <li>Go to <strong>youtube.com</strong> and sign in</li>
+                    <li>Click EditThisCookie icon → Export</li>
+                    <li>Save the file as <code class="bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded text-xs">yt-dlp-cookies.txt</code></li>
+                    <li>Place it in your home directory: <code class="bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded text-xs">~/yt-dlp-cookies.txt</code></li>
+                </ol>
+            </div>
+
+            <!-- Solution 3: Try Different Platform -->
+            <div class="space-y-3 bg-white dark:bg-slate-800 p-4 rounded border border-green-200 dark:border-green-600">
+                <h4 class="font-bold text-green-600 dark:text-green-400 flex items-center gap-2">
+                    <span>🔄</span> Solution 3: Try Different Platform (No Auth Needed)
+                </h4>
+                <p class="text-sm text-slate-600 dark:text-slate-300">These platforms don't require authentication:</p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded text-sm">TikTok</span>
+                    <span class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded text-sm">Dailymotion</span>
+                    <span class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded text-sm">Vimeo</span>
+                    <span class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded text-sm">Facebook</span>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 dark:bg-blue-900 p-3 rounded text-xs text-slate-600 dark:text-slate-300 border border-blue-200 dark:border-blue-700">
+                <strong>💡 Tip:</strong> Once you extract cookies once, they'll be saved and you won't need to do it again for future YouTube videos!
+            </div>
+
+            <button onclick="document.getElementById('auth-help-modal').classList.add('hidden')"
+                    class="w-full bg-slate-400 px-4 py-2 rounded font-bold text-sm text-white hover:bg-slate-500">
+                Got it, I'll fix this
+            </button>
+        </div>
+
         <!-- Step 1.5: Quality Selection (hidden until URL is loaded) -->
         <div id="quality-selector" class="hidden bg-blue-50 text-slate-800 
                     p-4 sm:p-6 rounded-xl space-y-4
@@ -202,19 +273,31 @@
         
         const status = document.getElementById('load-status');
         const selector = document.getElementById('quality-selector');
+        const authModal = document.getElementById('auth-help-modal');
         
         status.classList.remove('hidden');
         status.innerText = "Fetching available formats... (This takes 10-30 seconds)";
         selector.classList.add('hidden');
+        authModal.classList.add('hidden');
 
         const fd = new FormData();
         fd.append('url', url);
 
         try {
             const res = await fetch('/api/editor/get-formats', { method: 'POST', body: fd });
-            if (!res.ok) throw new Error(await res.text());
+            const data = await res.json();
             
-            availableFormats = await res.json();
+            if (!res.ok) {
+                // Check if it's an auth error
+                if (data.error || data.auth_required) {
+                    status.innerText = "❌ " + (data.error || data.message);
+                    authModal.classList.remove('hidden');
+                    return;
+                }
+                throw new Error(data.detail || "Error fetching formats");
+            }
+            
+            availableFormats = data;
             status.innerText = "✓ Formats loaded! Select your preferred quality below.";
             
             renderFormatOptions();
@@ -222,6 +305,37 @@
         } catch(e) { 
             status.innerText = "❌ Error: " + e.message; 
             console.error(e);
+        }
+    }
+
+    async function extractCookies() {
+        const btn = document.getElementById('btn-extract-cookies');
+        const status = document.getElementById('cookie-status');
+        
+        btn.disabled = true;
+        status.classList.remove('hidden');
+        status.innerText = "Extracting cookies...";
+
+        const fd = new FormData();
+        fd.append('browser', 'chrome');
+
+        try {
+            const res = await fetch('/api/editor/extract-cookies', { method: 'POST', body: fd });
+            const data = await res.json();
+            
+            if (!res.ok) {
+                status.innerText = "❌ " + (data.error || data.message || "Failed to extract");
+                return;
+            }
+            
+            status.innerText = "✅ Cookies extracted! Try loading your video again.";
+            setTimeout(() => {
+                document.getElementById('auth-help-modal').classList.add('hidden');
+            }, 2000);
+        } catch(e) { 
+            status.innerText = "❌ Error: " + e.message; 
+        } finally {
+            btn.disabled = false;
         }
     }
 
@@ -297,9 +411,12 @@
 
         try {
             const res = await fetch('/api/editor/download-format', { method: 'POST', body: fd });
-            if (!res.ok) throw new Error(await res.text());
-            
             const data = await res.json();
+            
+            if (!res.ok) {
+                status.innerText = "❌ " + (data.detail || data.message || "Download failed"); 
+                return;
+            }
             
             if (formatType === 'video') {
                 // Initialize editor workspace for video
