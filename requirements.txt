@@ -20,3 +20,4 @@ aiosqlite
 Pillow
 rembg
 onnxruntime
+browser-cookie3
