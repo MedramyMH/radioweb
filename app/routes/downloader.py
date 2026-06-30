@@ -8,6 +8,9 @@ from app.services.downloader_service import get_available_formats, download_medi
 
 router = APIRouter()
 
+# Path to cookies file (user can extract from browser)
+COOKIES_PATH = os.path.expanduser("~/yt-dlp-cookies.txt")
+
 def cleanup_file(path: str):
     if os.path.exists(path):
         try: os.remove(path)
@@ -19,6 +22,48 @@ async def downloader_page(request: Request):
     templates = Jinja2Templates(directory="app/templates")
     return templates.TemplateResponse(request, "downloader.html", {"request": request})
 
+@router.get("/api/editor/auth-help")
+async def get_auth_help():
+    """
+    Return authentication help information
+    """
+    return {
+        "auth_required": True,
+        "message": "YouTube requires authentication for many videos",
+        "solutions": [
+            {
+                "method": "Use Browser Cookies (Recommended)",
+                "steps": [
+                    "Install: pip install browser-cookie3",
+                    "Log into YouTube in your browser",
+                    "Run our cookie extraction tool",
+                    "Cookies will be saved automatically"
+                ],
+                "advantages": "Works seamlessly, fully automated"
+            },
+            {
+                "method": "Manual Cookie Export",
+                "steps": [
+                    "Install Chrome extension: EditThisCookie",
+                    "Go to youtube.com and sign in",
+                    "Click EditThisCookie icon",
+                    "Click Export and save as cookies.txt",
+                    "Place file at: ~/yt-dlp-cookies.txt"
+                ],
+                "advantages": "Full control, works for signed-in cookies"
+            },
+            {
+                "method": "Use Different Video Source",
+                "steps": [
+                    "Try another platform: TikTok, Dailymotion, Vimeo",
+                    "These usually don't require authentication",
+                    "No setup needed"
+                ],
+                "advantages": "No authentication needed"
+            }
+        ]
+    }
+
 @router.post("/api/editor/get-formats")
 async def get_formats(url: str = Form(...)):
     """
@@ -26,10 +71,76 @@ async def get_formats(url: str = Form(...)):
     Returns video and audio format options with qualities.
     """
     try:
-        formats = await asyncio.to_thread(get_available_formats, url)
+        # Check if cookies file exists
+        cookies = COOKIES_PATH if os.path.exists(COOKIES_PATH) else None
+        
+        formats = await asyncio.to_thread(
+            get_available_formats, 
+            url,
+            cookies
+        )
+        
+        # If auth is required, include helpful message
+        if formats.get("auth_required"):
+            return {
+                **formats,
+                "help_url": "/api/editor/auth-help"
+            }
+        
         return formats
     except Exception as e:
-        raise HTTPException(400, f"Invalid URL or format extraction failed: {str(e)}")
+        error_msg = str(e)
+        
+        # Check if it's an authentication error
+        if "Sign in to confirm" in error_msg or "bot" in error_msg.lower():
+            raise HTTPException(
+                400, 
+                {
+                    "error": "Authentication Required",
+                    "message": "YouTube requires you to sign in. Please extract cookies from your browser.",
+                    "help_url": "/api/editor/auth-help",
+                    "details": error_msg[:200]
+                }
+            )
+        elif "Unsupported URL" in error_msg or "No video found" in error_msg:
+            raise HTTPException(400, f"Invalid or unsupported URL: {error_msg[:200]}")
+        else:
+            raise HTTPException(400, f"Error: {error_msg[:200]}")
+
+@router.post("/api/editor/extract-cookies")
+async def extract_cookies(browser: str = Form("chrome")):
+    """
+    Extract cookies from browser automatically.
+    Supported browsers: chrome, firefox, edge
+    """
+    try:
+        from app.services.downloader_service import extract_cookies_from_browser
+        
+        cookies_path = await asyncio.to_thread(
+            extract_cookies_from_browser,
+            browser
+        )
+        
+        if cookies_path and os.path.exists(cookies_path):
+            return {
+                "success": True,
+                "message": f"Cookies extracted from {browser}",
+                "cookies_path": cookies_path
+            }
+        else:
+            raise Exception(f"Failed to extract cookies. Make sure you're logged into YouTube in {browser}")
+    
+    except ImportError:
+        raise HTTPException(
+            400,
+            {
+                "error": "Missing dependency",
+                "message": "Please install browser-cookie3: pip install browser-cookie3",
+                "instructions": "https://github.com/borisbabic/browser_cookie3"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(400, str(e))
 
 @router.post("/api/editor/download-format")
 async def download_selected_format(
@@ -48,15 +159,22 @@ async def download_selected_format(
         # Create temp directory if it doesn't exist
         os.makedirs(TEMP_DIR, exist_ok=True)
         
-        # Download with selected format
-        await asyncio.to_thread(download_media, url, format_id, str(TEMP_DIR) + "/")
+        # Check if cookies file exists
+        cookies = COOKIES_PATH if os.path.exists(COOKIES_PATH) else None
         
-        # Get the downloaded file (yt_dlp saves with video id)
-        # Find the file that was just downloaded
+        # Download with selected format
+        await asyncio.to_thread(
+            download_media, 
+            url, 
+            format_id, 
+            str(TEMP_DIR) + "/",
+            cookies
+        )
+        
+        # Get the downloaded file
         for file in os.listdir(TEMP_DIR):
             file_path = str(TEMP_DIR / file)
-            # Skip if it's a directory or our job tracking
-            if os.path.isfile(file_path) and file.startswith(job_id) is False:
+            if os.path.isfile(file_path) and not file.startswith(job_id):
                 # Rename to our standard format
                 if format_type == 'audio':
                     final_path = str(TEMP_DIR / f"{job_id}.m4a")
@@ -75,7 +193,6 @@ async def download_selected_format(
                         "format_type": "video"
                     }
                 else:
-                    # For audio, we don't need metadata
                     return {
                         "job_id": job_id,
                         "format_type": "audio"
@@ -86,7 +203,12 @@ async def download_selected_format(
     except Exception as e:
         if os.path.exists(temp_path):
             cleanup_file(temp_path)
-        raise HTTPException(500, f"Download failed: {str(e)}")
+        
+        error_msg = str(e)
+        if "Sign in to confirm" in error_msg or "bot" in error_msg.lower():
+            raise HTTPException(400, "Authentication required. Please extract cookies from your browser.")
+        
+        raise HTTPException(500, f"Download failed: {error_msg[:200]}")
 
 @router.post("/api/editor/load")
 async def load_video_to_editor(
@@ -120,7 +242,8 @@ async def load_video_to_editor(
         return {"job_id": job_id, "duration": meta["duration"], "thumbnail": meta["thumbnail"], "format_type": "video"}
 
     except Exception as e:
-        if video_path and os.path.exists(video_path): cleanup_file(video_path)
+        if video_path and os.path.exists(video_path): 
+            cleanup_file(video_path)
         raise HTTPException(500, str(e))
 
 @router.post("/api/editor/export")
