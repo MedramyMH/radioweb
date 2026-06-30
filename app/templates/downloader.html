@@ -21,13 +21,13 @@
                 <input
                     type="text"
                     id="source-url"
-                    placeholder="Paste YouTube / TikTok URL..."
+                    placeholder="Paste YouTube / TikTok / Facebook URL..."
                     class="flex-1 p-3 rounded border text-sm
                            bg-white text-slate-800 border-slate-300
                            dark:bg-slate-900 dark:text-slate-100 dark:border-slate-600
                            focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <div class="flex gap-2">
-                    <button onclick="loadFromUrl()" id="btn-load-url"
+                    <button onclick="fetchFormats()" id="btn-load-url"
                             class="flex-1 sm:flex-none bg-blue-600 px-4 py-3 rounded font-bold text-sm hover:bg-blue-700 active:scale-95 transition-transform text-white">
                         Load URL
                     </button>
@@ -39,7 +39,50 @@
                 </div>
             </div>
 
-            <p id="load-status" class="text-sm text-slate-500 dark:text-slate-400 hidden">Downloading/Uploading... Please wait.</p>
+            <p id="load-status" class="text-sm text-slate-500 dark:text-slate-400 hidden">Fetching available formats...</p>
+        </div>
+
+        <!-- Step 1.5: Quality Selection (hidden until URL is loaded) -->
+        <div id="quality-selector" class="hidden bg-blue-50 text-slate-800 
+                    p-4 sm:p-6 rounded-xl space-y-4
+                    border border-blue-300
+                    dark:bg-slate-800 dark:text-slate-100 dark:border-blue-600">
+            
+            <h3 class="text-lg sm:text-xl font-bold flex items-center gap-2">
+                <span>📥</span> Select Download Quality
+            </h3>
+
+            <!-- Video/Audio Toggle -->
+            <div class="flex gap-2 border-b pb-4">
+                <button onclick="switchFormatType('video')" id="btn-video-type"
+                        class="flex-1 py-2 px-4 rounded font-bold text-sm bg-blue-600 text-white">
+                    🎬 Video
+                </button>
+                <button onclick="switchFormatType('audio')" id="btn-audio-type"
+                        class="flex-1 py-2 px-4 rounded font-bold text-sm bg-slate-400 text-white hover:bg-slate-500">
+                    🎵 Audio Only
+                </button>
+            </div>
+
+            <!-- Video Formats -->
+            <div id="video-formats-container" class="space-y-2">
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">VIDEO FORMATS</p>
+                <div id="video-formats-list" class="space-y-2 max-h-64 overflow-y-auto">
+                    <p class="text-sm text-slate-400">Loading formats...</p>
+                </div>
+            </div>
+
+            <!-- Audio Formats (hidden by default) -->
+            <div id="audio-formats-container" class="hidden space-y-2">
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">AUDIO FORMATS</p>
+                <div id="audio-formats-list" class="space-y-2 max-h-64 overflow-y-auto">
+                    <p class="text-sm text-slate-400">Loading formats...</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-200 dark:bg-slate-700 p-3 rounded text-xs text-slate-600 dark:text-slate-300">
+                <strong>Tip:</strong> Higher resolutions take longer to download. Choose based on your internet speed and storage.
+            </div>
         </div>
 
         <!-- Step 2: Editor workspace (hidden until video loads) -->
@@ -136,6 +179,8 @@
 <script>
     let currentJobId = null;
     let maxDuration = 0;
+    let currentFormatType = 'video'; // video or audio
+    let availableFormats = { video_formats: [], audio_formats: [] };
 
     function formatTime(s) {
         const m = Math.floor(s / 60);
@@ -143,34 +188,154 @@
         return `${m.toString().padStart(2, '0')}:${sec.padStart(4, '0')}`;
     }
 
-    async function loadFromUrl() {
+    function formatFileSize(bytes) {
+        if (bytes === 0) return 'Unknown size';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    async function fetchFormats() {
         const url = document.getElementById('source-url').value;
         if (!url) return alert("Enter a URL");
+        
         const status = document.getElementById('load-status');
+        const selector = document.getElementById('quality-selector');
+        
         status.classList.remove('hidden');
-        status.innerText = "Fetching video from URL... (This takes time)";
+        status.innerText = "Fetching available formats... (This takes 10-30 seconds)";
+        selector.classList.add('hidden');
+
         const fd = new FormData();
         fd.append('url', url);
+
         try {
-            const res = await fetch('/api/editor/load', { method: 'POST', body: fd });
+            const res = await fetch('/api/editor/get-formats', { method: 'POST', body: fd });
             if (!res.ok) throw new Error(await res.text());
-            initEditorWorkspace(await res.json());
-        } catch(e) { status.innerText = "Error: " + e.message; }
+            
+            availableFormats = await res.json();
+            status.innerText = "✓ Formats loaded! Select your preferred quality below.";
+            
+            renderFormatOptions();
+            selector.classList.remove('hidden');
+        } catch(e) { 
+            status.innerText = "❌ Error: " + e.message; 
+            console.error(e);
+        }
+    }
+
+    function renderFormatOptions() {
+        // Render video formats
+        const videoList = document.getElementById('video-formats-list');
+        if (availableFormats.video_formats.length > 0) {
+            videoList.innerHTML = availableFormats.video_formats.map(fmt => `
+                <button onclick="downloadFormat('${fmt.format_id}', 'video')"
+                        class="w-full p-3 rounded bg-white dark:bg-slate-700 border border-blue-300 dark:border-blue-500
+                               hover:bg-blue-100 dark:hover:bg-slate-600 transition-colors text-left">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-bold text-slate-800 dark:text-white">${fmt.quality} @ ${fmt.fps}fps</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400">${fmt.vcodec}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs font-mono text-slate-600 dark:text-slate-300">${fmt.filesize_mb}MB</div>
+                        </div>
+                    </div>
+                </button>
+            `).join('');
+        } else {
+            videoList.innerHTML = '<p class="text-sm text-slate-400">No video formats available</p>';
+        }
+
+        // Render audio formats
+        const audioList = document.getElementById('audio-formats-list');
+        if (availableFormats.audio_formats.length > 0) {
+            audioList.innerHTML = availableFormats.audio_formats.map(fmt => `
+                <button onclick="downloadFormat('${fmt.format_id}', 'audio')"
+                        class="w-full p-3 rounded bg-white dark:bg-slate-700 border border-blue-300 dark:border-blue-500
+                               hover:bg-blue-100 dark:hover:bg-slate-600 transition-colors text-left">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-bold text-slate-800 dark:text-white">${fmt.quality}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400">${fmt.acodec}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs font-mono text-slate-600 dark:text-slate-300">${fmt.filesize_mb}MB</div>
+                        </div>
+                    </div>
+                </button>
+            `).join('');
+        } else {
+            audioList.innerHTML = '<p class="text-sm text-slate-400">No audio formats available</p>';
+        }
+    }
+
+    function switchFormatType(type) {
+        currentFormatType = type;
+        
+        document.getElementById('video-formats-container').classList.toggle('hidden', type !== 'video');
+        document.getElementById('audio-formats-container').classList.toggle('hidden', type !== 'audio');
+        
+        document.getElementById('btn-video-type').classList.toggle('bg-blue-600', type === 'video');
+        document.getElementById('btn-video-type').classList.toggle('bg-slate-400', type !== 'video');
+        document.getElementById('btn-audio-type').classList.toggle('bg-blue-600', type === 'audio');
+        document.getElementById('btn-audio-type').classList.toggle('bg-slate-400', type !== 'audio');
+    }
+
+    async function downloadFormat(formatId, formatType) {
+        const url = document.getElementById('source-url').value;
+        const status = document.getElementById('load-status');
+        
+        status.classList.remove('hidden');
+        status.innerText = "⏳ Downloading selected quality... This may take several minutes depending on file size.";
+        
+        const fd = new FormData();
+        fd.append('url', url);
+        fd.append('format_id', formatId);
+        fd.append('format_type', formatType);
+
+        try {
+            const res = await fetch('/api/editor/download-format', { method: 'POST', body: fd });
+            if (!res.ok) throw new Error(await res.text());
+            
+            const data = await res.json();
+            
+            if (formatType === 'video') {
+                // Initialize editor workspace for video
+                initEditorWorkspace(data);
+            } else {
+                // For audio, show success message
+                status.innerText = "✓ Audio downloaded successfully! Use your preferred audio editor.";
+                document.getElementById('quality-selector').classList.add('hidden');
+            }
+        } catch(e) { 
+            status.innerText = "❌ Download failed: " + e.message; 
+            console.error(e);
+        }
     }
 
     async function loadFromFile() {
         const file = document.getElementById('source-file').files[0];
         if (!file) return;
+        
         const status = document.getElementById('load-status');
+        const selector = document.getElementById('quality-selector');
+        
         status.classList.remove('hidden');
         status.innerText = "Uploading local file...";
+        selector.classList.add('hidden');
+        
         const fd = new FormData();
         fd.append('file', file);
+        
         try {
             const res = await fetch('/api/editor/load', { method: 'POST', body: fd });
             if (!res.ok) throw new Error(await res.text());
             initEditorWorkspace(await res.json());
-        } catch(e) { status.innerText = "Error: " + e.message; }
+        } catch(e) { 
+            status.innerText = "Error: " + e.message; 
+        }
     }
 
     function initEditorWorkspace(data) {
@@ -183,7 +348,9 @@
         startSlider.max = maxDuration; startSlider.value = 0;
         endSlider.max = maxDuration; endSlider.value = maxDuration;
         document.getElementById('editor-workspace').classList.remove('hidden');
-        document.getElementById('load-status').innerText = "Video loaded successfully!";
+        document.getElementById('load-status').innerText = "✓ Video loaded successfully!";
+        document.getElementById('quality-selector').classList.add('hidden');
+        
         // Scroll to editor on mobile
         if (window.innerWidth < 1024) {
             document.getElementById('editor-workspace').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -217,7 +384,7 @@
             a.href = URL.createObjectURL(blob);
             a.download = `edited_${currentJobId}.mp4`;
             a.click();
-            status.innerText = "Done! File downloaded.";
+            status.innerText = "✓ Done! File downloaded.";
         } catch(e) { status.innerText = "Error: " + e.message; }
         finally { btn.disabled = false; }
     }
