@@ -204,13 +204,30 @@
         function setActiveMobileNav(url) {
             document.querySelectorAll('.mobile-nav-item').forEach(el => {
                 const href = el.getAttribute('href');
-                const isActive = href && (url === href || (href !== '/' && url.startsWith(href)));
+                if (!href) { 
+                    // Cas du bouton "Plus" (pas de href, juste onclick)
+                    el.classList.remove('text-blue-600', 'dark:text-blue-400');
+                    el.classList.add('text-gray-500', 'dark:text-gray-400');
+                    return;
+                }
+                const isActive = href === url || (href !== '/' && url === href);
                 el.classList.toggle('text-blue-600', isActive);
                 el.classList.toggle('dark:text-blue-400', isActive);
                 el.classList.toggle('text-gray-500', !isActive);
                 el.classList.toggle('dark:text-gray-400', !isActive);
+                el.blur(); // force le retrait de l'état :active/:focus
             });
         }
+        // function setActiveMobileNav(url) {
+        //     document.querySelectorAll('.mobile-nav-item').forEach(el => {
+        //         const href = el.getAttribute('href');
+        //         const isActive = href && (url === href || (href !== '/' && url.startsWith(href)));
+        //         el.classList.toggle('text-blue-600', isActive);
+        //         el.classList.toggle('dark:text-blue-400', isActive);
+        //         el.classList.toggle('text-gray-500', !isActive);
+        //         el.classList.toggle('dark:text-gray-400', !isActive);
+        //     });
+        // }
         setActiveMobileNav(window.location.pathname);
 
         // =====================================================
