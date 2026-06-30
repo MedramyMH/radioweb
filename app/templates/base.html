@@ -35,10 +35,14 @@
         #global-player {
             bottom: calc(56px + env(safe-area-inset-bottom, 0px));
         }
+        /* Fallback for browsers without dvh support */
+        body {
+            height: 100vh;
+            height: 100dvh;
+        }
     </style>
 </head>
-<!-- <body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white flex h-screen overflow-hidden"> -->
-<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white flex h-dvh overflow-hidden">
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white flex overflow-hidden">
 
     <!-- ===================== DESKTOP SIDEBAR (hidden on mobile) ===================== -->
     <aside class="hidden md:flex w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-col justify-between p-4 flex-shrink-0 z-40 shadow-sm">
@@ -199,36 +203,30 @@
 
         requestAnimationFrame(() => { requestAnimationFrame(updateToggleUI); });
 
+        // Prevents the lingering :active/:hover state issue on mobile browsers.
+        // Must be registered ONCE at the top level — never inside another listener.
+        document.addEventListener('touchstart', function() {}, true);
+
         // =====================================================
         // MOBILE BOTTOM NAV — active state
         // =====================================================
         function setActiveMobileNav(url) {
             document.querySelectorAll('.mobile-nav-item').forEach(el => {
                 const href = el.getAttribute('href');
-                if (!href) { 
-                    // Cas du bouton "Plus" (pas de href, juste onclick)
+                if (!href) {
+                    // Case of the "Plus" button (no href, just onclick)
                     el.classList.remove('text-blue-600', 'dark:text-blue-400');
                     el.classList.add('text-gray-500', 'dark:text-gray-400');
                     return;
                 }
-                const isActive = href === url || (href !== '/' && url === href);
+                const isActive = href === url;
                 el.classList.toggle('text-blue-600', isActive);
                 el.classList.toggle('dark:text-blue-400', isActive);
                 el.classList.toggle('text-gray-500', !isActive);
                 el.classList.toggle('dark:text-gray-400', !isActive);
-                el.blur(); // force le retrait de l'état :active/:focus
+                el.blur(); // force-clear stuck :active/:focus state on mobile
             });
         }
-        // function setActiveMobileNav(url) {
-        //     document.querySelectorAll('.mobile-nav-item').forEach(el => {
-        //         const href = el.getAttribute('href');
-        //         const isActive = href && (url === href || (href !== '/' && url.startsWith(href)));
-        //         el.classList.toggle('text-blue-600', isActive);
-        //         el.classList.toggle('dark:text-blue-400', isActive);
-        //         el.classList.toggle('text-gray-500', !isActive);
-        //         el.classList.toggle('dark:text-gray-400', !isActive);
-        //     });
-        // }
         setActiveMobileNav(window.location.pathname);
 
         // =====================================================
@@ -254,24 +252,13 @@
             if (!link) return;
             e.preventDefault();
             const url = link.href;
-        
-            // Force le retrait de l'état :active / focus sur mobile
+
+            // Force-clear :active / focus state on mobile
             link.blur();
             document.querySelectorAll('.mobile-nav-item').forEach(el => el.blur());
-        
+
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('bg-blue-50', 'dark:bg-blue-900', 'text-blue-600'));
-            link.classList.add('bg-blue-50', 'text-blue-600')
-
-        document.addEventListener('touchstart', function() {}, true);
-            
-        // document.addEventListener('click', async (e) => {
-        //     const link = e.target.closest('a[data-nav]');
-        //     if (!link) return;
-        //     e.preventDefault();
-        //     const url = link.href;
-
-        //     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('bg-blue-50', 'dark:bg-blue-900', 'text-blue-600'));
-        //     link.classList.add('bg-blue-50', 'text-blue-600');
+            link.classList.add('bg-blue-50', 'text-blue-600');
 
             try {
                 const res = await fetch(url, { redirect: 'manual' });
