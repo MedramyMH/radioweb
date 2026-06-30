@@ -112,9 +112,33 @@
             ]
         }
     });
+    
+    // Regex pour détecter les caractères arabes
+    const arabicRegex = /[\u0600-\u06FF\u0750-\u077F]/;
+    
+    quill.on('text-change', function(delta, oldDelta, source) {
+        if (source !== 'user') return;
+    
+        const range = quill.getSelection();
+        if (!range) return;
+    
+        const [line, offset] = quill.getLine(range.index);
+        if (!line) return;
+    
+        const lineText = line.domNode.textContent;
+        const lineIndex = quill.getIndex(line);
+    
+        if (arabicRegex.test(lineText)) {
+            quill.formatLine(lineIndex, 1, 'direction', 'rtl');
+            quill.formatLine(lineIndex, 1, 'align', 'right');
+        } else {
+            quill.formatLine(lineIndex, 1, 'direction', false);
+            quill.formatLine(lineIndex, 1, 'align', false);
+        }
+    });
 
-    quill.format('direction', 'rtl');
-    quill.format('align', 'right');
+    // quill.format('direction', 'rtl');
+    // quill.format('align', 'right');
 
     quill.getModule('toolbar').addHandler('image', function() {
         const input = document.createElement('input');
